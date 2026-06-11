@@ -1,0 +1,1781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>MILAD OS v3 — Google Sheets Connected</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0D1B2A;--navy2:#132236;--navy3:#1A3A5C;
+  --gold:#C9A84C;--gold2:#E8D49E;--gold3:#FDF3D8;
+  --gray:#6B7280;--gray2:#F3F4F6;--gray3:#E5E7EB;--gray4:#9CA3AF;
+  --green:#059669;--green2:#D1FAE5;
+  --red:#DC2626;--red2:#FEE2E2;
+  --amber:#D97706;--amber2:#FEF3C7;
+  --blue2:#DBEAFE;--white:#FFFFFF;
+  --text:#111827;--text2:#374151;--text3:#6B7280;
+  --r:8px;--r2:12px;--r3:16px;
+  --fh:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--fm:'DM Mono',monospace;
+  --tbh:52px;--bnh:60px;--sbw:256px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{font-family:var(--fb);color:var(--text);background:#F8F7F4;line-height:1.6;overflow-x:hidden}
+button,input,select,textarea{font-family:var(--fb)}
+
+/* TOPBAR */
+#topbar{position:fixed;top:0;left:0;right:0;height:var(--tbh);background:var(--navy);display:flex;align-items:center;padding:0 14px 0 12px;gap:10px;z-index:1100;border-bottom:1px solid rgba(201,168,76,.25)}
+#menu-btn{width:40px;height:40px;border-radius:var(--r);background:rgba(255,255,255,.07);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+#menu-btn:active{background:rgba(255,255,255,.15)}
+#menu-btn svg{width:20px;height:20px;stroke:#fff;stroke-width:2;fill:none;stroke-linecap:round}
+.tb-logo{font-family:var(--fh);font-weight:800;font-size:16px;color:var(--gold);letter-spacing:.1em;margin-right:auto;white-space:nowrap}
+.tb-logo span{color:rgba(255,255,255,.35);font-weight:400;font-size:12px}
+#save-ind{font-size:11px;font-family:var(--fm);color:rgba(255,255,255,.35);white-space:nowrap;transition:color .3s}
+#save-ind.saved{color:var(--green)}
+.tb-save-btn{padding:8px 14px;background:var(--gold);color:var(--navy);border:none;border-radius:var(--r);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;min-height:36px;flex-shrink:0}
+.tb-save-btn:active{background:var(--gold2)}
+
+/* OVERLAY */
+#overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1200;opacity:0;pointer-events:none;transition:opacity .25s;backdrop-filter:blur(2px)}
+#overlay.open{opacity:1;pointer-events:all}
+
+/* SIDEBAR */
+#sidebar{position:fixed;top:0;left:0;width:var(--sbw);height:100%;background:var(--navy2);z-index:1300;transform:translateX(-100%);transition:transform .28s cubic-bezier(.4,0,.2,1);overflow-y:auto;display:flex;flex-direction:column;padding-bottom:max(env(safe-area-inset-bottom),20px)}
+#sidebar.open{transform:translateX(0)}
+.sb-head{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(201,168,76,.2);flex-shrink:0;min-height:var(--tbh)}
+.sb-brand{font-family:var(--fh);font-weight:800;font-size:15px;color:var(--gold)}
+#sb-close{width:36px;height:36px;border-radius:var(--r);background:rgba(255,255,255,.07);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+#sb-close:active{background:rgba(255,255,255,.15)}
+#sb-close svg{width:18px;height:18px;stroke:rgba(255,255,255,.7);stroke-width:2;fill:none}
+.sb-section{padding:14px 18px 4px;font-size:9px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:.14em;text-transform:uppercase;font-family:var(--fh)}
+.sb-link{display:flex;align-items:center;gap:10px;padding:11px 18px;font-size:13px;color:rgba(255,255,255,.6);text-decoration:none;cursor:pointer;border-left:2px solid transparent;transition:all .15s;min-height:46px;user-select:none}
+.sb-link:active,.sb-link.active{background:rgba(201,168,76,.1);color:var(--gold);border-left-color:var(--gold)}
+.sb-link-icon{width:16px;text-align:center;flex-shrink:0}
+
+/* LAYOUT */
+#content{margin-top:var(--tbh);padding-bottom:calc(var(--bnh) + max(env(safe-area-inset-bottom),4px))}
+.page{display:none;min-height:calc(100vh - var(--tbh))}
+.page.active{display:block;animation:fadeIn .18s ease}
+@keyframes fadeIn{from{opacity:.7;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.px{padding:16px 16px 20px}
+
+/* SECTION HEADERS */
+.s-eye{font-family:var(--fm);font-size:10px;color:var(--gold);letter-spacing:.14em;text-transform:uppercase;margin-bottom:5px}
+.s-title{font-family:var(--fh);font-weight:800;font-size:22px;color:var(--navy);line-height:1.15;margin-bottom:5px}
+.s-sub{font-size:13px;color:var(--text3);margin-bottom:18px;line-height:1.5}
+
+/* CARDS */
+.card{background:var(--white);border:1px solid var(--gray3);border-radius:var(--r2);padding:16px}
+.card+.card{margin-top:12px}
+.card-navy{background:var(--navy);border-color:var(--navy)}
+.card-gold{background:var(--gold3);border-color:var(--gold)}
+.stack>*+*{margin-top:12px}
+
+/* GRIDS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+
+/* KPI CARD */
+.kpi{background:var(--white);border:1px solid var(--gray3);border-radius:var(--r2);padding:14px 14px 12px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--gold)}
+.kpi-lbl{font-size:10px;font-weight:600;color:var(--gray4);letter-spacing:.1em;text-transform:uppercase;font-family:var(--fm);margin-bottom:4px}
+.kpi-val{font-family:var(--fh);font-weight:800;font-size:26px;color:var(--navy);margin-bottom:3px;display:flex;align-items:baseline;gap:5px}
+.kpi-val input{font-family:var(--fh);font-weight:800;font-size:26px;color:var(--navy);width:70px;border:none;background:transparent;border-bottom:2px solid var(--gray3);outline:none;padding:0;min-height:44px}
+.kpi-val input:focus{border-bottom-color:var(--gold)}
+.bar{height:5px;background:var(--gray3);border-radius:3px;overflow:hidden;margin:6px 0}
+.bar-fill{height:100%;background:var(--gold);border-radius:3px;transition:width .4s}
+.kpi-act{font-size:11px;color:var(--text3);font-style:italic;margin-bottom:6px;line-height:1.4}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;font-family:var(--fm);letter-spacing:.05em;white-space:nowrap}
+.bc{background:var(--red2);color:#991B1B}
+.bh{background:var(--amber2);color:#92400E}
+.bm{background:var(--blue2);color:#1E40AF}
+.bok{background:var(--green2);color:#065F46}
+
+/* FORM */
+.inp{width:100%;padding:10px 12px;border:1px solid var(--gray3);border-radius:var(--r);font-size:14px;color:var(--text);background:var(--white);outline:none;transition:border-color .15s;min-height:44px}
+.inp:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,76,.1)}
+textarea.inp{min-height:72px;resize:vertical;line-height:1.5}
+.inp-sm{text-align:center;padding:6px 8px;font-weight:700;font-family:var(--fh)}
+input[type=checkbox]{width:20px;height:20px;accent-color:var(--gold);flex-shrink:0;cursor:pointer}
+input[type=number]{min-height:44px}
+
+/* CHECKLIST */
+.chk-list{list-style:none}
+.chk-li{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--gray3);min-height:44px}
+.chk-li:last-child{border:none}
+.chk-li label{font-size:13px;color:var(--text2);cursor:pointer;line-height:1.5;flex:1;padding-top:1px}
+
+/* TABS */
+.tab-bar{display:flex;background:var(--navy);border-radius:var(--r2);padding:4px;margin-bottom:16px;gap:3px}
+.tab-btn{flex:1;padding:10px 6px;border:none;background:transparent;color:rgba(255,255,255,.5);font-size:13px;font-weight:600;border-radius:var(--r);cursor:pointer;transition:all .2s;min-height:44px;white-space:nowrap}
+.tab-btn.active{background:var(--gold);color:var(--navy)}
+.tab-pane{display:none}
+.tab-pane.active{display:block}
+
+/* SCORE ROW */
+.score-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--gray3);min-height:48px;gap:8px}
+.score-row:last-child{border:none}
+.score-row label{font-size:13px;color:var(--text2);flex:1;line-height:1.4}
+
+/* SHORTCUTS */
+.scut-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+.scut{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--white);border:1px solid var(--gray3);border-radius:var(--r2);cursor:pointer;min-height:72px;transition:all .15s}
+.scut:active{background:var(--gold3);transform:scale(.97)}
+.scut-icon{font-size:22px;line-height:1}
+.scut-lbl{font-size:11px;font-weight:600;color:var(--navy);font-family:var(--fm)}
+
+/* DIVIDERS */
+.divider{height:1px;background:var(--gray3);margin:18px 0}
+.gold-line{height:2px;background:linear-gradient(90deg,var(--gold),transparent);border-radius:1px;margin:16px 0}
+
+/* MASTER SCORE */
+#master-card{background:var(--navy);border-radius:var(--r3);padding:20px 20px 18px;margin-bottom:16px;position:relative;overflow:hidden}
+#master-card::after{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(201,168,76,.08),transparent 70%);pointer-events:none}
+#master-score{font-family:var(--fh);font-weight:800;font-size:60px;color:var(--gold);line-height:1}
+#master-bar{height:8px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden;margin:12px 0}
+#master-bar-fill{height:100%;background:var(--gold);border-radius:4px;transition:width .6s;width:0%}
+#master-status{font-size:12px;color:rgba(255,255,255,.45);line-height:1.5}
+
+/* TIMELINE */
+.tl{position:relative;padding-left:24px}
+.tl::before{content:'';position:absolute;left:7px;top:6px;bottom:6px;width:2px;background:var(--gray3)}
+.tl-item{position:relative;margin-bottom:22px}
+.tl-dot{position:absolute;left:-24px;top:3px;width:16px;height:16px;border-radius:50%;border:2px solid var(--white);box-shadow:0 0 0 2px var(--gold)}
+.tl-lbl{font-family:var(--fm);font-size:10px;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px}
+.tl-title{font-family:var(--fh);font-weight:700;font-size:15px;margin-bottom:8px;line-height:1.3}
+.tl-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.tl-cell{background:var(--gray2);border-radius:var(--r);padding:8px}
+.tl-cell-lbl{font-size:9px;font-weight:700;color:var(--gray4);text-transform:uppercase;letter-spacing:.08em;font-family:var(--fm);margin-bottom:2px}
+.tl-cell-val{font-size:11px;color:var(--text2);line-height:1.4}
+
+/* QUIZ */
+.quiz-q{padding:12px 0;border-bottom:1px solid var(--gray3)}
+.quiz-q:last-of-type{border:none}
+.quiz-q p{font-size:14px;font-weight:500;color:var(--text);margin-bottom:8px;line-height:1.4}
+.quiz-opts{display:flex;flex-direction:column;gap:4px}
+.quiz-opt{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text2);cursor:pointer;padding:7px 0;min-height:44px;border-radius:var(--r)}
+.quiz-opt input{flex-shrink:0}
+.quiz-result{margin-top:12px;padding:12px 14px;border-radius:var(--r);display:none;font-size:13px;line-height:1.5}
+.quiz-result.show{display:block}
+.quiz-result.good{background:var(--green2);color:#065F46}
+.quiz-result.mid{background:var(--amber2);color:#92400E}
+.quiz-result.low{background:var(--red2);color:#991B1B}
+
+/* MOBILE CARD ROWS */
+.m-card{background:var(--white);border:1px solid var(--gray3);border-radius:var(--r2);padding:14px;margin-bottom:10px}
+.m-card-title{font-weight:600;font-size:14px;color:var(--navy);margin-bottom:8px;line-height:1.3}
+.m-card-row{display:flex;justify-content:space-between;align-items:flex-start;padding:5px 0;border-bottom:1px solid var(--gray3);font-size:12px;gap:8px}
+.m-card-row:last-child{border:none}
+.m-card-lbl{color:var(--gray4);flex-shrink:0;padding-top:1px}
+.m-card-val{color:var(--text2);font-weight:500;text-align:right;word-break:break-word}
+
+/* BACKLOG */
+.bl-head{padding:10px 14px;display:flex;align-items:center;gap:8px;margin-top:16px;border-radius:var(--r) var(--r) 0 0}
+.bl-head h4{font-family:var(--fh);font-size:13px;font-weight:700;color:#fff;margin:0}
+.bl-head .cnt{font-size:11px;opacity:.6;margin-left:auto;color:#fff}
+.bl-now{background:#065F46}
+.bl-next{background:var(--navy3)}
+.bl-later{background:var(--gray)}
+.bl-someday{background:#4B5563}
+.bl-item{display:flex;align-items:flex-start;gap:12px;padding:11px 14px;background:var(--white);border-bottom:1px solid var(--gray3)}
+.bl-item:hover{background:#FAFAF9}
+.bl-item-body{flex:1;min-width:0}
+.bl-item-name{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px}
+.bl-item-meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.bl-item-why{font-size:11px;color:var(--gray4);margin-top:2px}
+
+/* COO + AI */
+.coo-card{background:var(--white);border:1px solid var(--gray3);border-radius:var(--r2);padding:16px;margin-bottom:12px}
+.ai-card{background:var(--white);border:1px solid var(--gray3);border-radius:var(--r2);padding:16px;margin-bottom:12px;border-left:4px solid var(--navy)}
+
+/* DOMAIN */
+.dom-card{background:var(--white);border:1px solid var(--gray3);border-radius:var(--r2);padding:14px;margin-bottom:10px;position:relative}
+.dom-num{position:absolute;top:12px;right:12px;font-family:var(--fh);font-weight:800;font-size:22px;color:var(--gray3)}
+.dom-icon{font-size:22px;margin-bottom:8px}
+.dom-title{font-family:var(--fh);font-weight:700;font-size:14px;color:var(--navy);margin-bottom:4px}
+.dom-purpose{font-size:12px;color:var(--text3);margin-bottom:8px;line-height:1.4}
+.dom-target{font-size:12px;color:var(--text2);background:var(--gold3);border-radius:4px;padding:5px 10px;margin-bottom:6px;font-weight:500}
+.dom-risk{font-size:11px;color:#DC2626;background:#FEF2F2;padding:4px 8px;border-radius:4px;margin-bottom:10px;line-height:1.4}
+
+/* HEALTH */
+.habit-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--gray3);min-height:44px}
+.habit-days{display:flex;gap:8px}
+.habit-day{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9px;color:var(--gray4);font-family:var(--fm)}
+
+/* PROG BAR LABELLED */
+.prog-wrap{margin:8px 0}
+.prog-top{display:flex;justify-content:space-between;margin-bottom:4px}
+.prog-top span:first-child{font-size:12px;color:var(--text2);font-weight:500}
+.prog-top span:last-child{font-size:12px;color:var(--gold);font-weight:700;font-family:var(--fm)}
+
+/* SETTINGS */
+.setting-item{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--gray3);min-height:54px;gap:12px}
+.setting-item:last-child{border:none}
+.setting-lbl{font-size:14px;font-weight:500;color:var(--text)}
+.setting-desc{font-size:11px;color:var(--text3);margin-top:2px}
+.sbtn{padding:9px 16px;border-radius:var(--r);font-size:12px;font-weight:700;cursor:pointer;border:none;min-height:38px;white-space:nowrap;font-family:var(--fb)}
+.sbtn-gold{background:var(--gold);color:var(--navy)}
+.sbtn-gold:active{background:var(--gold2)}
+.sbtn-ghost{background:transparent;color:var(--navy3);border:1px solid var(--gray3)}
+.sbtn-ghost:active{background:var(--gray2)}
+.sbtn-danger{background:var(--red2);color:var(--red)}
+.sbtn-danger:active{background:#FECACA}
+
+/* BOTTOM NAV */
+#bottom-nav{position:fixed;bottom:0;left:0;right:0;height:var(--bnh);background:var(--white);border-top:1px solid var(--gray3);display:flex;z-index:1050;padding-bottom:env(safe-area-inset-bottom)}
+.bn-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:none;background:transparent;cursor:pointer;padding:6px 2px;min-width:0;-webkit-tap-highlight-color:transparent}
+.bn-icon{font-size:20px;line-height:1}
+.bn-lbl{font-size:10px;font-weight:600;color:var(--gray4);font-family:var(--fm)}
+.bn-btn.active .bn-lbl{color:var(--gold)}
+
+/* DESKTOP */
+@media(min-width:768px){
+  #sidebar{transform:translateX(0)}
+  #overlay{display:none!important}
+  #menu-btn{display:none}
+  #content{margin-left:var(--sbw)}
+  #bottom-nav{display:none}
+  #content{padding-bottom:24px}
+  .px{padding:28px 32px 32px}
+  .g2-d{grid-template-columns:1fr 1fr}
+  .g3-d{grid-template-columns:repeat(3,1fr)}
+  .g4-d{grid-template-columns:repeat(4,1fr)}
+}
+
+/* PRINT */
+@media print{
+  @page{size:A4;margin:18mm 15mm}
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  #topbar,#sidebar,#overlay,#bottom-nav,#menu-btn,.no-print,.tab-bar{display:none!important}
+  #content{margin:0!important;padding:0!important}
+  .page{display:block!important;page-break-after:always}
+  .page:last-child{page-break-after:auto}
+  .tab-pane{display:block!important}
+  body{background:white}
+  .px{padding:0}
+  .card,.kpi,.m-card,.coo-card,.ai-card,.dom-card,.tl-item,.bl-item{page-break-inside:avoid}
+  .card-navy{background:#0D1B2A!important}
+  #master-card{background:#0D1B2A!important}
+  #master-score{color:#C9A84C!important}
+  .kpi::before{background:#C9A84C!important}
+  .bl-now{background:#065F46!important}
+  .bl-next{background:#1A3A5C!important}
+  .tab-btn.active{background:#C9A84C!important;color:#0D1B2A!important}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div id="topbar">
+  <button id="menu-btn" onclick="toggleSidebar()" aria-label="Menu">
+    <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <div class="tb-logo">MILAD <span>OS v3</span></div>
+  <span id="save-ind">unsaved</span>
+  <span id="sync-top-dot" style="width:8px;height:8px;border-radius:50%;background:#9CA3AF;flex-shrink:0;transition:background .3s"></span>
+  <div id="sync-toast" style="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:var(--r);font-size:13px;font-weight:600;color:#fff;opacity:0;transition:opacity .3s;pointer-events:none;z-index:2000;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.25)"></div>
+  <button class="tb-save-btn" onclick="saveAll()">Save</button>
+</div>
+
+<!-- OVERLAY -->
+<div id="overlay" onclick="closeSidebar()"></div>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="sb-head">
+    <div class="sb-brand">MILAD OS</div>
+    <button id="sb-close" onclick="closeSidebar()">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="sb-section">Main</div>
+  <div class="sb-link active" onclick="nav('home')"><span class="sb-link-icon">🏠</span>Dashboard</div>
+  <div class="sb-section">Execution</div>
+  <div class="sb-link" onclick="nav('exec');switchTab('daily')"><span class="sb-link-icon">⚡</span>Execution Center</div>
+  <div class="sb-link" onclick="nav('exec');switchTab('daily')"><span class="sb-link-icon">📅</span>Daily System</div>
+  <div class="sb-link" onclick="nav('exec');switchTab('weekly')"><span class="sb-link-icon">📆</span>Weekly System</div>
+  <div class="sb-link" onclick="nav('exec');switchTab('monthly')"><span class="sb-link-icon">📋</span>Monthly System</div>
+  <div class="sb-section">Strategy</div>
+  <div class="sb-link" onclick="nav('roadmap')"><span class="sb-link-icon">🗺</span>Master Roadmap</div>
+  <div class="sb-link" onclick="nav('learn')"><span class="sb-link-icon">📚</span>Learning Architecture</div>
+  <div class="sb-link" onclick="nav('backlog')"><span class="sb-link-icon">📌</span>Learning Backlog</div>
+  <div class="sb-link" onclick="nav('certs')"><span class="sb-link-icon">🎓</span>Certifications</div>
+  <div class="sb-section">Mastery</div>
+  <div class="sb-link" onclick="nav('ielts')"><span class="sb-link-icon">📖</span>IELTS System</div>
+  <div class="sb-link" onclick="nav('migration')"><span class="sb-link-icon">🇮🇪</span>Migration</div>
+  <div class="sb-link" onclick="nav('coo')"><span class="sb-link-icon">👑</span>COO Track</div>
+  <div class="sb-link" onclick="nav('ai')"><span class="sb-link-icon">🤖</span>AI Track</div>
+  <div class="sb-link" onclick="nav('brand')"><span class="sb-link-icon">📣</span>Brand</div>
+  <div class="sb-link" onclick="nav('wealth')"><span class="sb-link-icon">💰</span>Wealth</div>
+  <div class="sb-link" onclick="nav('health')"><span class="sb-link-icon">💪</span>Health</div>
+  <div class="sb-section">Tools</div>
+  <div class="sb-link" onclick="nav('domains')"><span class="sb-link-icon">🌐</span>Life Domains</div>
+  <div class="sb-link" onclick="nav('tests')"><span class="sb-link-icon">🔬</span>Self-Tests</div>
+  <div class="sb-link" onclick="nav('templates')"><span class="sb-link-icon">📋</span>Templates</div>
+  <div class="sb-link" onclick="nav('settings')"><span class="sb-link-icon">⚙️</span>Settings</div>
+</nav>
+
+<!-- CONTENT -->
+<div id="content">
+<!-- ═══ HOME ═══ -->
+<div id="page-home" class="page active"><div class="px">
+  <div id="master-card">
+    <div style="font-family:var(--fm);font-size:10px;color:rgba(255,255,255,.4);letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px">Dublin Readiness Score</div>
+    <div style="display:flex;align-items:flex-end;gap:8px"><div id="master-score">—</div><div style="font-size:20px;color:rgba(255,255,255,.25);padding-bottom:8px">/100</div></div>
+    <div id="master-bar"><div id="master-bar-fill"></div></div>
+    <div id="master-status">Enter scores below to calculate readiness.</div>
+    <div style="margin-top:10px;font-size:11px;color:rgba(255,255,255,.3);font-family:var(--fm)">Last saved: <span id="last-saved">Never</span> · Synced: <span id="last-sync-time" style="color:rgba(201,168,76,.6)">Never</span></div>
+  </div>
+  <div class="scut-grid">
+    <button class="scut" onclick="nav('exec');switchTab('daily')"><span class="scut-icon">📅</span><span class="scut-lbl">Daily</span></button>
+    <button class="scut" onclick="nav('exec');switchTab('weekly')"><span class="scut-icon">📆</span><span class="scut-lbl">Weekly</span></button>
+    <button class="scut" onclick="nav('exec');switchTab('monthly')"><span class="scut-icon">📋</span><span class="scut-lbl">Monthly</span></button>
+    <button class="scut" onclick="nav('ielts')"><span class="scut-icon">📖</span><span class="scut-lbl">IELTS</span></button>
+    <button class="scut" onclick="nav('migration')"><span class="scut-icon">🇮🇪</span><span class="scut-lbl">Migration</span></button>
+    <button class="scut" onclick="nav('tests')"><span class="scut-icon">🔬</span><span class="scut-lbl">Tests</span></button>
+  </div>
+  <div class="card" style="margin-bottom:10px">
+    <div style="font-family:var(--fm);font-size:10px;color:var(--red);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">🔴 Top Priority Today</div>
+    <textarea class="inp" id="dash-today" placeholder="Your #1 action for today..." style="min-height:52px"></textarea>
+  </div>
+  <div class="card" style="margin-bottom:18px">
+    <div style="font-family:var(--fm);font-size:10px;color:var(--amber);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">🟡 Top 3 This Week</div>
+    <textarea class="inp" id="dash-week" placeholder="1. &#10;2. &#10;3." style="min-height:80px"></textarea>
+  </div>
+  <div style="font-family:var(--fh);font-weight:700;font-size:16px;color:var(--navy);margin-bottom:12px">Domain Scores</div>
+  <div id="kpi-grid"></div>
+</div></div>
+
+<!-- ═══ EXECUTION CENTER ═══ -->
+<div id="page-exec" class="page"><div class="px">
+  <div class="s-eye">Execution Center</div>
+  <div class="s-title">Daily · Weekly · Monthly</div>
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('daily')" id="tbtn-daily">Daily</button>
+    <button class="tab-btn" onclick="switchTab('weekly')" id="tbtn-weekly">Weekly</button>
+    <button class="tab-btn" onclick="switchTab('monthly')" id="tbtn-monthly">Monthly</button>
+  </div>
+
+  <!-- DAILY -->
+  <div class="tab-pane active" id="tp-daily">
+    <div class="card"><div style="font-family:var(--fm);font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">English & IELTS</div><ul class="chk-list" id="d-ielts"></ul></div>
+    <div class="card"><div style="font-family:var(--fm);font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">AI Task</div><ul class="chk-list" id="d-ai"></ul></div>
+    <div class="card"><div style="font-family:var(--fm);font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">Career & Migration</div><ul class="chk-list" id="d-career"></ul></div>
+    <div class="card"><div style="font-family:var(--fm);font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">Health & Brand</div><ul class="chk-list" id="d-health"></ul></div>
+    <div class="gold-line"></div>
+    <div style="font-family:var(--fh);font-weight:700;font-size:15px;color:var(--navy);margin-bottom:12px">Daily Score</div>
+    <div class="card" id="d-score-wrap"></div>
+    <div class="card">
+      <div style="font-family:var(--fm);font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Notes for Today</div>
+      <textarea class="inp" id="daily-notes" placeholder="What happened today?"></textarea>
+      <div style="font-family:var(--fm);font-size:10px;color:var(--navy);text-transform:uppercase;letter-spacing:.1em;margin:12px 0 6px">Tomorrow's Priority</div>
+      <textarea class="inp" id="tomorrow-pri" placeholder="#1 action for tomorrow..." style="min-height:52px"></textarea>
+    </div>
+  </div>
+
+  <!-- WEEKLY -->
+  <div class="tab-pane" id="tp-weekly">
+    <div class="card" style="margin-bottom:12px">
+      <div style="font-family:var(--fh);font-weight:700;font-size:14px;color:var(--navy);margin-bottom:12px">Weekly Scorecard</div>
+      <div id="w-scorecard"></div>
+    </div>
+    <div class="card" style="margin-bottom:12px">
+      <div style="font-family:var(--fm);font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">Weekly Metrics</div>
+      <div id="w-metrics"></div>
+    </div>
+    <div class="card" style="margin-bottom:12px">
+      <div style="font-family:var(--fm);font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Top 3 Next Actions</div>
+      <textarea class="inp" id="w-top3" placeholder="1. &#10;2. &#10;3." style="min-height:80px"></textarea>
+    </div>
+    <div id="w-qs"></div>
+  </div>
+
+  <!-- MONTHLY -->
+  <div class="tab-pane" id="tp-monthly">
+    <div class="card" style="margin-bottom:12px">
+      <div style="font-family:var(--fm);font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Month / Period</div>
+      <input class="inp" type="text" id="m-period" placeholder="e.g. July 2026">
+    </div>
+    <div class="card" style="margin-bottom:12px">
+      <div style="font-family:var(--fh);font-weight:700;font-size:14px;color:var(--navy);margin-bottom:10px">Monthly KPIs</div>
+      <div id="m-kpis"></div>
+    </div>
+    <div class="card" style="margin-bottom:12px">
+      <div style="font-family:var(--fm);font-size:10px;color:var(--green);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Main Wins</div>
+      <textarea class="inp" id="m-wins" placeholder="1. &#10;2. &#10;3." style="min-height:72px"></textarea>
+      <div style="font-family:var(--fm);font-size:10px;color:var(--red);text-transform:uppercase;letter-spacing:.1em;margin:12px 0 6px">Failures / Gaps</div>
+      <textarea class="inp" id="m-failures" placeholder="What didn't happen? Why?" style="min-height:60px"></textarea>
+      <div style="font-family:var(--fm);font-size:10px;color:var(--navy);text-transform:uppercase;letter-spacing:.1em;margin:12px 0 6px">Next Month Strategy</div>
+      <textarea class="inp" id="m-strategy" placeholder="What changes next month?" style="min-height:60px"></textarea>
+    </div>
+    <div id="m-board-qs"></div>
+  </div>
+</div></div>
+
+<!-- ═══ ROADMAP ═══ -->
+<div id="page-roadmap" class="page"><div class="px">
+  <div class="s-eye">03 — Strategic Direction</div>
+  <div class="s-title">Master Roadmap</div>
+  <div class="s-sub">Five horizons from 90 days to 5 years. Every milestone serves Dublin 2027.</div>
+  <div class="tl" id="roadmap-tl"></div>
+</div></div>
+
+<!-- ═══ LEARNING ═══ -->
+<div id="page-learn" class="page"><div class="px">
+  <div class="s-eye">04 — Education System</div>
+  <div class="s-title">Learning Architecture</div>
+  <div class="s-sub">20 disciplines. Priority, method, and weekly minimum for each.</div>
+  <div id="learn-cards"></div>
+</div></div>
+
+<!-- ═══ BACKLOG ═══ -->
+<div id="page-backlog" class="page"><div class="px">
+  <div class="s-eye">05 — Sprint Board</div>
+  <div class="s-title">Learning Backlog</div>
+  <div class="s-sub">40+ skills in NOW / NEXT / LATER / SOMEDAY sprints.</div>
+  <div id="backlog-wrap"></div>
+</div></div>
+
+<!-- ═══ CERTS ═══ -->
+<div id="page-certs" class="page"><div class="px">
+  <div class="s-eye">06 — Credentials</div>
+  <div class="s-title">Certification Roadmap</div>
+  <div class="s-sub">Ranked by career value and migration relevance.</div>
+  <div id="certs-wrap"></div>
+</div></div>
+
+<!-- ═══ IELTS ═══ -->
+<div id="page-ielts" class="page"><div class="px">
+  <div class="s-eye">10 — Language Mastery</div>
+  <div class="s-title">IELTS Operating System</div>
+  <div class="s-sub">Target: Band 7+ in all four skills. This is the critical bottleneck.</div>
+  <div class="g2" style="margin-bottom:14px" id="ielts-bands"></div>
+  <div id="ielts-tasks"></div>
+  <div class="gold-line"></div>
+  <div style="font-family:var(--fh);font-weight:700;font-size:15px;color:var(--navy);margin-bottom:10px">Speaking Prompt Bank</div>
+  <div class="card" id="speaking-bank"></div>
+  <div class="gold-line"></div>
+  <div style="font-family:var(--fh);font-weight:700;font-size:15px;color:var(--navy);margin-bottom:10px">Writing Checklist</div>
+  <div class="g2" id="writing-chk"></div>
+  <div class="card" style="margin-top:12px">
+    <div style="font-family:var(--fm);font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Mistake Log</div>
+    <textarea class="inp" id="ielts-mistakes" placeholder="Track recurring errors..."></textarea>
+  </div>
+</div></div>
+
+<!-- ═══ MIGRATION ═══ -->
+<div id="page-migration" class="page"><div class="px">
+  <div class="s-eye">11 — Dublin 2027</div>
+  <div class="s-title">Migration Readiness</div>
+  <div class="card-navy" style="border-radius:var(--r3);padding:20px;margin-bottom:16px">
+    <div style="font-family:var(--fm);font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.12em;margin-bottom:6px">Migration Score</div>
+    <div style="font-family:var(--fh);font-weight:800;font-size:52px;color:var(--gold)" id="mig-score">0</div>
+    <div style="font-size:12px;color:rgba(255,255,255,.35)">/100</div>
+    <div class="bar" style="background:rgba(255,255,255,.1);margin-top:10px"><div class="bar-fill" id="mig-bar" style="width:0%"></div></div>
+    <div style="font-size:12px;color:rgba(255,255,255,.4);margin-top:6px" id="mig-status">Complete each dimension below.</div>
+  </div>
+  <div id="mig-items"></div>
+</div></div>
+
+<!-- ═══ COO ═══ -->
+<div id="page-coo" class="page"><div class="px">
+  <div class="s-eye">12 — Leadership Track</div>
+  <div class="s-title">COO Development</div>
+  <div class="s-sub">Operations Manager → Senior → Head → Director → COO</div>
+  <div id="coo-stages"></div>
+</div></div>
+
+<!-- ═══ AI ═══ -->
+<div id="page-ai" class="page"><div class="px">
+  <div class="s-eye">13 — Technology Edge</div>
+  <div class="s-title">AI Mastery Track</div>
+  <div class="s-sub">Four levels: Beginner → Intermediate → Advanced → Strategic Leader</div>
+  <div id="ai-levels"></div>
+</div></div>
+
+<!-- ═══ BRAND ═══ -->
+<div id="page-brand" class="page"><div class="px">
+  <div class="s-eye">14 — Authority Building</div>
+  <div class="s-title">Personal Brand System</div>
+  <div class="s-sub">YouTube + LinkedIn + Website. 1 video/week + 3 posts/week.</div>
+  <div class="g2" style="margin-bottom:14px" id="brand-kpis"></div>
+  <div class="card" style="margin-bottom:12px">
+    <div style="font-family:var(--fm);font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">Content Pillars</div>
+    <div id="brand-pillars"></div>
+  </div>
+  <div id="brand-weekly"></div>
+</div></div>
+
+<!-- ═══ WEALTH ═══ -->
+<div id="page-wealth" class="page"><div class="px">
+  <div class="s-eye">15 — Financial Growth</div>
+  <div class="s-title">Wealth & Income System</div>
+  <div class="g2" style="margin-bottom:14px" id="wealth-kpis"></div>
+  <div id="wealth-actions"></div>
+</div></div>
+
+<!-- ═══ HEALTH ═══ -->
+<div id="page-health" class="page"><div class="px">
+  <div class="s-eye">16 — Energy Foundation</div>
+  <div class="s-title">Health & Energy</div>
+  <div class="g2" style="margin-bottom:14px" id="health-kpis"></div>
+  <div class="card" style="margin-bottom:12px">
+    <div style="font-family:var(--fh);font-weight:700;font-size:14px;color:var(--navy);margin-bottom:12px">Weekly Habit Tracker</div>
+    <div id="health-habits"></div>
+  </div>
+  <div class="card-gold card" style="margin-bottom:12px">
+    <div style="font-family:var(--fh);font-weight:700;font-size:14px;color:var(--navy);margin-bottom:8px">Smoke-Free Counter</div>
+    <div style="display:flex;align-items:baseline;gap:8px">
+      <input type="number" min="0" value="0" id="smoke-days" style="font-family:var(--fh);font-weight:800;font-size:44px;color:var(--navy);border:none;background:transparent;width:110px;outline:none;min-height:44px">
+      <span style="font-size:13px;color:var(--text3)">days smoke-free</span>
+    </div>
+    <div style="font-size:12px;color:var(--text3);margin-top:4px">Non-negotiable. Incompatible with the Dublin life.</div>
+  </div>
+  <div class="card">
+    <div style="font-family:var(--fm);font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Energy Log</div>
+    <textarea class="inp" id="health-notes" placeholder="Energy, focus, stress level today..."></textarea>
+  </div>
+</div></div>
+
+<!-- ═══ DOMAINS ═══ -->
+<div id="page-domains" class="page"><div class="px">
+  <div class="s-eye">02 — Strategic Framework</div>
+  <div class="s-title">Life Domains</div>
+  <div class="s-sub">13 domains. Score each one. Your growth is multidimensional.</div>
+  <div id="domains-grid"></div>
+</div></div>
+
+<!-- ═══ TESTS ═══ -->
+<div id="page-tests" class="page"><div class="px">
+  <div class="s-eye">17 — Diagnostics</div>
+  <div class="s-title">Self-Assessment Tests</div>
+  <div class="s-sub">8 tests. Score honestly. Use results to prioritize your next sprint.</div>
+  <div id="tests-wrap"></div>
+</div></div>
+
+<!-- ═══ TEMPLATES ═══ -->
+<div id="page-templates" class="page"><div class="px">
+  <div class="s-eye">19 — Reusable Tools</div>
+  <div class="s-title">Templates Library</div>
+  <div class="s-sub">12 fillable templates. Auto-saved to your browser.</div>
+  <div id="templates-wrap"></div>
+</div></div>
+
+<!-- ═══ SETTINGS ═══ -->
+<div id="page-settings" class="page"><div class="px">
+  <div class="s-eye">System</div>
+  <div class="s-title">Settings</div>
+
+  <!-- ── GOOGLE SHEETS CONNECTION ── -->
+  <div style="font-family:var(--fm);font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:.14em;margin-bottom:10px">Google Sheets Connection</div>
+  <div class="card" style="margin-bottom:14px">
+    <!-- Sync Status Banner -->
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--gray3);margin-bottom:4px">
+      <span id="sync-status-dot" style="width:10px;height:10px;border-radius:50%;background:#9CA3AF;flex-shrink:0;transition:background .3s"></span>
+      <span id="sync-status-text" style="font-size:12px;color:var(--text3);font-family:var(--fm)">Not connected</span>
+    </div>
+    <!-- API URL -->
+    <div class="setting-item" style="flex-direction:column;align-items:flex-start;gap:8px">
+      <div><div class="setting-lbl">Web App URL</div><div class="setting-desc">Paste your Google Apps Script deployment URL</div></div>
+      <input class="inp" type="url" id="cfg-api-url" placeholder="https://script.google.com/macros/s/.../exec" style="font-size:12px;min-height:40px">
+    </div>
+    <!-- User ID -->
+    <div class="setting-item" style="flex-direction:column;align-items:flex-start;gap:8px">
+      <div><div class="setting-lbl">User ID</div><div class="setting-desc">Your identifier in the Google Sheet (default: milad)</div></div>
+      <input class="inp" type="text" id="cfg-user-id" placeholder="milad" style="font-size:13px;min-height:40px;max-width:200px">
+    </div>
+    <!-- API Token -->
+    <div class="setting-item" style="flex-direction:column;align-items:flex-start;gap:8px">
+      <div><div class="setting-lbl">API Token</div><div class="setting-desc">From Settings tab in your Google Sheet → API_TOKEN value</div></div>
+      <input class="inp" type="password" id="cfg-token" placeholder="MILAD-xxxxxxxxxxxxxxxx" style="font-size:13px;min-height:40px">
+    </div>
+    <!-- Auto Sync Toggle -->
+    <div class="setting-item">
+      <div>
+        <div class="setting-lbl">Auto Sync</div>
+        <div class="setting-desc" id="auto-sync-status">Sync to Google Sheets every 30 seconds</div>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="cfg-auto-sync" onchange="toggleAutoSync()" style="width:20px;height:20px;accent-color:var(--gold)">
+        <span style="font-size:12px;color:var(--text3)">Enable</span>
+      </label>
+    </div>
+    <!-- Last Sync Time -->
+    <div class="setting-item">
+      <div><div class="setting-lbl">Last Synced</div><div class="setting-desc" id="settings-last-sync">Never synced to Google Sheets</div></div>
+    </div>
+    <!-- Action Buttons -->
+    <div style="display:flex;flex-wrap:wrap;gap:10px;padding:14px 0 4px">
+      <button class="sbtn sbtn-ghost" id="btn-test-conn" onclick="testConnection()">🔌 Test Connection</button>
+      <button class="sbtn sbtn-gold" id="btn-sync-now" onclick="syncToSheets()">☁️ Sync Now</button>
+      <button class="sbtn sbtn-ghost" id="btn-load-sheets" onclick="loadFromSheets()">⬇️ Load from Sheets</button>
+    </div>
+  </div>
+
+  <!-- ── LOCAL STORAGE ── -->
+  <div style="font-family:var(--fm);font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:.14em;margin-bottom:10px">Local Storage</div>
+  <div class="card" style="margin-bottom:14px">
+    <div class="setting-item">
+      <div><div class="setting-lbl">Save Locally</div><div class="setting-desc" id="settings-ts">Last saved: Never</div></div>
+      <button class="sbtn sbtn-gold" onclick="saveAll()">Save Now</button>
+    </div>
+    <div class="setting-item">
+      <div><div class="setting-lbl">Export JSON + Drive Backup</div><div class="setting-desc">Downloads JSON and backs up to Google Drive if connected</div></div>
+      <button class="sbtn sbtn-ghost" onclick="exportJsonBackup()">Export</button>
+    </div>
+    <div class="setting-item">
+      <div><div class="setting-lbl">Import JSON</div><div class="setting-desc">Restore from a local JSON backup file</div></div>
+      <button class="sbtn sbtn-ghost" onclick="document.getElementById('import-file').click()">Import</button>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+    </div>
+  </div>
+
+  <!-- ── PRINT & SYSTEM ── -->
+  <div style="font-family:var(--fm);font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:.14em;margin-bottom:10px">System</div>
+  <div class="card" style="margin-bottom:14px">
+    <div class="setting-item">
+      <div><div class="setting-lbl">Print A4 Version</div><div class="setting-desc">Professional printable A4 layout</div></div>
+      <button class="sbtn sbtn-ghost" onclick="window.print()">Print</button>
+    </div>
+    <div class="setting-item">
+      <div><div class="setting-lbl" style="color:var(--red)">Reset All Data</div><div class="setting-desc">Permanently deletes local data and sync config</div></div>
+      <button class="sbtn sbtn-danger" onclick="resetAll()">Reset</button>
+    </div>
+  </div>
+
+  <!-- ── HOW TO CONNECT GUIDE ── -->
+  <div style="font-family:var(--fm);font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:.14em;margin-bottom:10px">Quick Connect Guide</div>
+  <div class="card" style="margin-bottom:16px">
+    <div style="font-size:13px;color:var(--text2);line-height:1.8">
+      <div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid var(--gray3)"><span style="font-family:var(--fm);font-size:11px;color:var(--gold);width:24px;flex-shrink:0">1.</span><span>Create a Google Sheet named <strong>MILAD OS Database</strong></span></div>
+      <div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid var(--gray3)"><span style="font-family:var(--fm);font-size:11px;color:var(--gold);width:24px;flex-shrink:0">2.</span><span>Open <strong>Extensions → Apps Script</strong></span></div>
+      <div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid var(--gray3)"><span style="font-family:var(--fm);font-size:11px;color:var(--gold);width:24px;flex-shrink:0">3.</span><span>Paste the full <strong>Code.gs</strong> content and save</span></div>
+      <div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid var(--gray3)"><span style="font-family:var(--fm);font-size:11px;color:var(--gold);width:24px;flex-shrink:0">4.</span><span>Run <strong>setupMiladOS()</strong> and authorize permissions</span></div>
+      <div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid var(--gray3)"><span style="font-family:var(--fm);font-size:11px;color:var(--gold);width:24px;flex-shrink:0">5.</span><span>Deploy → <strong>New Deployment → Web App</strong> → Execute as Me → Anyone</span></div>
+      <div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid var(--gray3)"><span style="font-family:var(--fm);font-size:11px;color:var(--gold);width:24px;flex-shrink:0">6.</span><span>Copy the Web App URL → paste above</span></div>
+      <div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid var(--gray3)"><span style="font-family:var(--fm);font-size:11px;color:var(--gold);width:24px;flex-shrink:0">7.</span><span>Open your Sheet → <strong>Settings tab → API_TOKEN</strong> value → paste above</span></div>
+      <div style="display:flex;gap:10px;padding:6px 0"><span style="font-family:var(--fm);font-size:11px;color:var(--gold);width:24px;flex-shrink:0">8.</span><span>Click <strong>Test Connection</strong>, then <strong>Sync Now</strong></span></div>
+    </div>
+  </div>
+
+  <div class="card-navy card" style="text-align:center;padding:28px 20px">
+    <div style="font-family:var(--fh);font-weight:800;font-size:20px;color:var(--gold);margin-bottom:8px">The Dublin Life was not given to you.</div>
+    <div style="font-family:var(--fh);font-weight:700;font-size:16px;color:#fff;margin-bottom:12px">You built it.</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.4);font-family:var(--fm)">MILAD OS v3.0 · Google Sheets Connected · Muscat → Dublin</div>
+  </div>
+</div></div>
+
+</div><!-- /content -->
+
+<!-- BOTTOM NAV -->
+<nav id="bottom-nav">
+  <button class="bn-btn active" id="bn-home" onclick="nav('home')"><span class="bn-icon">🏠</span><span class="bn-lbl">Home</span></button>
+  <button class="bn-btn" id="bn-daily" onclick="nav('exec');switchTab('daily')"><span class="bn-icon">📅</span><span class="bn-lbl">Daily</span></button>
+  <button class="bn-btn" id="bn-weekly" onclick="nav('exec');switchTab('weekly')"><span class="bn-icon">📆</span><span class="bn-lbl">Weekly</span></button>
+  <button class="bn-btn" id="bn-monthly" onclick="nav('exec');switchTab('monthly')"><span class="bn-icon">📋</span><span class="bn-lbl">Monthly</span></button>
+  <button class="bn-btn" id="bn-menu" onclick="toggleSidebar()"><span class="bn-icon">☰</span><span class="bn-lbl">Menu</span></button>
+</nav>
+<script>
+
+// ═══════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════
+const KPI_DATA=[
+  {id:'ielts',label:'English & IELTS',action:'45 min IELTS practice daily',priority:'CRITICAL'},
+  {id:'migration',label:'Migration Readiness',action:'Confirm visa route Q4 2026',priority:'CRITICAL'},
+  {id:'career',label:'Career & COO Readiness',action:'Apply to 2 Irish companies this month',priority:'HIGH'},
+  {id:'ai',label:'AI Skill Level',action:'Complete Google AI Essentials',priority:'HIGH'},
+  {id:'brand',label:'Personal Brand',action:'Record first YouTube video',priority:'HIGH'},
+  {id:'finance',label:'Financial Growth',action:'Automate 200 OMR savings',priority:'HIGH'},
+  {id:'health',label:'Health & Energy',action:'3 workouts + zero cigarettes',priority:'HIGH'},
+  {id:'freedom',label:'Freedom & Lifestyle',action:'Complete 1 personal milestone',priority:'MEDIUM'},
+  {id:'learning',label:'Learning Consistency',action:'Log 10+ learning hours/week',priority:'HIGH'},
+  {id:'leadership',label:'Leadership Maturity',action:'30 min from COO reading list',priority:'MEDIUM'},
+];
+const KPI_W={ielts:.3,migration:.3,career:.2,ai:.05,brand:.05,finance:.05,health:.05,freedom:.02,learning:.02,leadership:.01};
+
+const DOMAINS=[
+  {num:'01',icon:'🚀',title:'Career',purpose:'Senior international role that enables Dublin 2027',target:'Senior Ops/BD/Marketing — €50K+ in Ireland',weekly:'1 career action daily. Research Irish market 3x/week.',risk:'Career stagnation → visa ineligibility → mission failure'},
+  {num:'02',icon:'🇮🇪',title:'Migration',purpose:'Execute every step to legally settle in Ireland',target:'Critical Skills Permit filed. Dublin by late 2027.',weekly:'1 migration action. Update readiness tracker weekly.',risk:'Missing visa window → 2027 target delayed 12+ months'},
+  {num:'03',icon:'📖',title:'English & IELTS',purpose:'Achieve Band 7+ to unlock the visa application',target:'IELTS Academic Band 7+ — all four skills',weekly:'45 min daily minimum. 1 full mock per month.',risk:'Below Band 7 = no visa application possible.'},
+  {num:'04',icon:'🤖',title:'AI Skills',purpose:'Use AI to outperform peers in every role',target:'AI for Operations expert + 3 projects documented',weekly:'1 AI experiment/week. 1 major project/month.',risk:'Falling behind in AI reduces 2027 market competitiveness'},
+  {num:'05',icon:'👑',title:'Leadership',purpose:'Develop COO-level thinking and executive presence',target:'Head of Operations readiness by 2028',weekly:'30 min reading. Apply 1 leadership principle at work.',risk:'Technical skill without leadership = mid-management ceiling'},
+  {num:'06',icon:'⚙️',title:'Operations',purpose:'Deepen mastery in the discipline that defines the career',target:'Lean awareness + 2 ops improvements documented',weekly:'1 ops improvement idea implemented or proposed.',risk:'Static role → commoditized → lower employability'},
+  {num:'07',icon:'📣',title:'Personal Brand',purpose:'Build authority that opens doors before applications',target:'500 LinkedIn + 20 YouTube videos + website live',weekly:'1 video/week. 3 LinkedIn posts/week.',risk:'No brand = competing purely on CV in new market'},
+  {num:'08',icon:'💰',title:'Wealth',purpose:'Build the financial foundation migration requires',target:'200+ OMR saved/month + 600 OMR migration fund',weekly:'Check savings rate. Log one income-growth action.',risk:'Poor finances = forced to stay, debt tied to migration'},
+  {num:'09',icon:'💪',title:'Health',purpose:'Maintain the energy every other dimension depends on',target:'3x/week exercise + smoke-free + 7+ hrs sleep',weekly:'3 workouts. Zero cigarettes. 7 hrs sleep minimum.',risk:'Poor health = depleted performance across all dimensions'},
+  {num:'10',icon:'🕊️',title:'Freedom',purpose:'Life not dependent on any single employer',target:'Online income = 25% of salary by 2028',weekly:'1 action toward financial or location freedom.',risk:'Single income dependency = fragile migration plan'},
+  {num:'11',icon:'❤️',title:'Family',purpose:'Keep the partnership strong through a demanding transition',target:'Strong marriage. Family planning conversation started.',weekly:'Intentional time together. One shared goal review.',risk:'Relationship damage from stress = everything at risk'},
+  {num:'12',icon:'🧠',title:'Mental Growth',purpose:'Build the mindset of a COO and international professional',target:'Daily reflection + journaling + mentors identified',weekly:'5 min reflection. 10 pages reading minimum.',risk:'No inner work = emotional fragility under migration pressure'},
+  {num:'13',icon:'🎓',title:'Certifications',purpose:'Build credential profile that opens Irish doors',target:'5 recognized certifications by end of 2026',weekly:'1 learning session daily (30 min minimum).',risk:'No certs = invisible in ATS-filtered Irish job market'},
+];
+
+const ROADMAP=[
+  {period:'90 Days',label:'Q3 2026 — Foundation Sprint',color:'#059669',cells:[{l:'Main Goal',v:'IELTS registered. First 5 YouTube videos. Savings automated.'},{l:'IELTS',v:'Baseline mock test. Daily 45-min routine.'},{l:'Career',v:'LinkedIn optimized. CV Irish format. 3 recruiters.'},{l:'Financial',v:'200 OMR/month auto-saved. Fund started.'},{l:'Brand',v:'Channel live. 5 videos. 50+ subscribers.'},{l:'AI',v:'Google AI Essentials done. 2 workflows.'}]},
+  {period:'6 Months',label:'Q4 2026 — Execution Phase',color:'#1A3A5C',cells:[{l:'Main Goal',v:'IELTS exam booked. Salary 1,000 OMR. 20 videos.'},{l:'IELTS',v:'3 mock tests. Writing 6.5+. Speaking daily.'},{l:'Career',v:'5 Irish applications. 2 interviews.'},{l:'Financial',v:'Migration fund: 400+ OMR.'},{l:'Brand',v:'20 videos. 200 subscribers. 3 posts/week.'},{l:'AI',v:'2 AI certs. 1 dashboard built.'}]},
+  {period:'1 Year',label:'Mid-2027 — Pre-Departure',color:'#C9A84C',cells:[{l:'Main Goal',v:'IELTS 7+ achieved. Job offer pipeline active.'},{l:'IELTS',v:'Band 7+ confirmed. Visa requirement met.'},{l:'Career',v:'Active interviews with Irish companies.'},{l:'Financial',v:'Migration fund: 1,500+ OMR.'},{l:'Brand',v:'500 subscribers. 400+ LinkedIn. Website live.'},{l:'Migration',v:'Visa application submitted.'}]},
+  {period:'3 Years',label:'2027–2028 — Dublin Life',color:'#0D1B2A',cells:[{l:'Main Goal',v:'Settled in Dublin. Senior role. €50K+.'},{l:'Career',v:'Senior Ops/BD. Stamp 4 path.'},{l:'Financial',v:'€500/mo savings. €1,000 online income.'},{l:'Brand',v:'1,000+ subscribers. First consulting client.'},{l:'COO',v:'Senior Ops Manager. P&L exposure.'},{l:'Life',v:'Family planning. Umrah. Iran visited.'}]},
+  {period:'5 Years',label:'2029–2031 — Growth Chapter',color:'#6B7280',cells:[{l:'Main Goal',v:'Head of Operations. €70K+. Brand monetized.'},{l:'Career',v:'Head of Ops or Director. COO capability.'},{l:'Financial',v:'€2,000+ online. Full emergency fund.'},{l:'Brand',v:'10,000+ subscribers. Course launched.'},{l:'COO',v:'VP/Director. Board interaction.'},{l:'Migration',v:'Irish citizenship path (5-year milestone).'}]},
+];
+
+const LEARN_CATS=[
+  ['A','English & IELTS','CRITICAL','Daily practice + Cambridge books','IELTS Academic','45 min/day'],
+  ['B','Leadership','HIGH','Books + applied at work','ILM Level 5','30 min/day'],
+  ['C','Operations Mgmt','HIGH','Coursera + process projects','APICS CSCP','2 hrs/week'],
+  ['D','Construction Ops','MEDIUM','Self-study + current role','CIOB','1 hr/week'],
+  ['E','Business Admin','HIGH','Harvard Online + edX','MBA-adjacent','2 hrs/week'],
+  ['F','AI for Business','HIGH','Google + Coursera','Google AI Essentials','1 hr/week'],
+  ['G','AI Automation','HIGH','n8n, Zapier tutorials','Microsoft AI','1 hr/week'],
+  ['H','Data & Analytics','MEDIUM','Google Data Analytics','Power BI','1 hr/week'],
+  ['I','Productivity','HIGH','Apply & document','Personal cert','Daily apply'],
+  ['J','Communication','HIGH','Toastmasters + writing','None needed','Daily practice'],
+  ['K','Strategic Thinking','HIGH','Case studies + books','None needed','30 min/week'],
+  ['L','Personal Branding','HIGH','YouTube + LinkedIn','None needed','Create weekly'],
+  ['M','Finance for Managers','MEDIUM','edX + book reading','CFA Level 1 later','1 hr/week'],
+  ['N','COO Development','MEDIUM','Books + mentors','None yet','30 min/week'],
+  ['O','International Career','CRITICAL','Irish market research','None needed','2 hrs/week'],
+  ['P','Sales & Negotiation','MEDIUM','HubSpot + books','HubSpot Sales','1 hr/week'],
+  ['Q','Marketing Strategy','HIGH','HubSpot + projects','HubSpot Marketing','1 hr/week'],
+  ['R','Project Management','HIGH','PMI PMBOK + Coursera','PMP / PRINCE2','2 hrs/week'],
+  ['S','Team Management','HIGH','Applied at work','ILM Leadership','Apply daily'],
+  ['T','Decision Making','HIGH','Case studies + books','None needed','Weekly review'],
+];
+
+const BACKLOG={
+  now:[
+    ['IELTS Daily Practice','Visa depends on Band 7+','CRITICAL','Ongoing'],
+    ['English Speaking','Interview & work readiness','CRITICAL','Ongoing'],
+    ['LinkedIn Optimization','Irish job market visibility','HIGH','Jul 2026'],
+    ['Irish Market Research','Know your target market','HIGH','Aug 2026'],
+    ['YouTube First Video','Start brand momentum','HIGH','Jul 2026'],
+    ['Smoke-Free Habit','Health + identity + visa','CRITICAL','Now'],
+    ['Workout 3x/week','Energy for all other goals','HIGH','Ongoing'],
+    ['Monthly Savings Auto','200 OMR non-negotiable','HIGH','Jul 2026'],
+    ['Google AI Essentials','Free. Fast. Credible.','HIGH','Aug 2026'],
+    ['CV Irish Format','ATS-optimized for Dublin','HIGH','Aug 2026'],
+  ],
+  next:[
+    ['Mock IELTS Test','Measure real baseline','CRITICAL','Aug 2026'],
+    ['LinkedIn Articles (3)','Thought leadership signal','HIGH','Sep 2026'],
+    ['PRINCE2 Foundation','Standard in Irish ops market','HIGH','Nov 2026'],
+    ['Personal Website','Hub for all brand assets','MEDIUM','Oct 2026'],
+    ['AI Workflow Built','Prove AI skill at work','HIGH','Sep 2026'],
+    ['Migration Fund 400 OMR','Financial milestone','HIGH','Nov 2026'],
+    ['HubSpot Marketing Cert','Free, fast, credible','MEDIUM','Sep 2026'],
+    ['Power BI Basics','Data skills for senior roles','MEDIUM','Oct 2026'],
+    ['Irish Job Applications x5','Active pipeline required','HIGH','Oct 2026'],
+    ['Recruiter Contacts x3','Relationships before search','HIGH','Sep 2026'],
+    ['COO Book 1 of 8','Leadership foundation','MEDIUM','Aug 2026'],
+    ['YouTube Video 10','Brand consistency milestone','HIGH','Nov 2026'],
+  ],
+  later:[
+    ['PMP Certification','Gold standard PM cert','HIGH','2027'],
+    ['APICS CSCP','Operations credential','MEDIUM','2027'],
+    ['Online Course Launch','First product income','HIGH','2028'],
+    ['Consulting Clients x2','Revenue beyond salary','HIGH','2028'],
+    ['Public Speaking x3','Executive presence','MEDIUM','2027'],
+    ['AI Agent Built','Advanced AI portfolio','HIGH','2027'],
+    ['500 LinkedIn Followers','Network milestone','HIGH','Q1 2027'],
+    ['Ireland Cultural Study','Arrival preparation','MEDIUM','2027'],
+    ['Irish Tax + Law Basics','Legal literacy for arrival','MEDIUM','Q1 2027'],
+  ],
+  someday:[
+    ['MBA or Executive Program','Long-term qualification','LOW','2030+'],
+    ['10K YouTube Subscribers','Brand scale milestone','MEDIUM','2030'],
+    ['Board Director Role','COO pathway','LOW','2032+'],
+    ['Irish Citizenship','5-year residency target','HIGH','2032'],
+    ['Speaking at Conference','Authority building','LOW','2029'],
+    ['Podcast Launch','Audio brand channel','LOW','2028'],
+  ],
+};
+
+const CERTS=[
+  {name:'Google AI Essentials',platform:'Google / Coursera',cost:'FREE',time:'6 hrs',career:'Very High',mig:'High',pri:'CRITICAL',target:'Jul 2026'},
+  {name:'Google Project Management',platform:'Google / Coursera',cost:'FREE',time:'6 months',career:'Very High',mig:'High',pri:'HIGH',target:'Q4 2026'},
+  {name:'HubSpot Marketing Cert',platform:'HubSpot Academy',cost:'FREE',time:'5 hrs',career:'High',mig:'Medium',pri:'HIGH',target:'Aug 2026'},
+  {name:'HubSpot Sales Cert',platform:'HubSpot Academy',cost:'FREE',time:'3 hrs',career:'High',mig:'Medium',pri:'MEDIUM',target:'Sep 2026'},
+  {name:'Atlassian Agile Cert',platform:'Atlassian',cost:'FREE',time:'4 hrs',career:'High',mig:'Medium',pri:'HIGH',target:'Sep 2026'},
+  {name:'Microsoft AI Fundamentals',platform:'Microsoft Learn',cost:'FREE',time:'8 hrs',career:'High',mig:'High',pri:'HIGH',target:'Q4 2026'},
+  {name:'IBM Data Analyst',platform:'Coursera / IBM',cost:'$49/mo',time:'4 months',career:'High',mig:'Medium',pri:'MEDIUM',target:'Q1 2027'},
+  {name:'PRINCE2 Foundation',platform:'AXELOS',cost:'~$300',time:'2 weeks',career:'Very High',mig:'Very High',pri:'HIGH',target:'Nov 2026'},
+  {name:'PMP Certification',platform:'PMI',cost:'$400+',time:'Months',career:'Very High',mig:'Very High',pri:'HIGH',target:'2027'},
+  {name:'APICS CSCP',platform:'APICS',cost:'~$1,200',time:'Months',career:'Very High',mig:'High',pri:'MEDIUM',target:'2027'},
+  {name:'Google Cloud Essentials',platform:'Google Cloud',cost:'FREE',time:'6 hrs',career:'High',mig:'Medium',pri:'MEDIUM',target:'Q1 2027'},
+  {name:'Meta Marketing Analytics',platform:'Meta / Coursera',cost:'$49/mo',time:'5 months',career:'High',mig:'Medium',pri:'MEDIUM',target:'Q1 2027'},
+  {name:'edX Business Analytics',platform:'edX',cost:'$150',time:'3 months',career:'High',mig:'Medium',pri:'MEDIUM',target:'2027'},
+  {name:'LinkedIn Learning Certs',platform:'LinkedIn',cost:'FREE*',time:'Varies',career:'Medium',mig:'Medium',pri:'MEDIUM',target:'Ongoing'},
+];
+
+const MIG_ITEMS=[
+  {dim:'IELTS Band 7+',weight:20,status:'Not started',evidence:'Official IELTS Academic certificate',action:'Register for exam. Start daily practice now.',deadline:'Q1 2027'},
+  {dim:'CV — Irish Format',weight:10,status:'Draft needed',evidence:'ATS-optimized 2-page Irish CV',action:'Reformat CV. Add Irish-relevant keywords.',deadline:'Aug 2026'},
+  {dim:'LinkedIn All-Star',weight:8,status:'Partial',evidence:'All-Star profile, 500+ connections',action:'Complete all sections. Post 3x/week.',deadline:'Sep 2026'},
+  {dim:'Certifications x3',weight:10,status:'In progress',evidence:'3+ recognized certs on LinkedIn',action:'Complete Google AI Essentials first.',deadline:'Oct 2026'},
+  {dim:'Job Applications x5',weight:10,status:'Not started',evidence:'5 active applications to Irish companies',action:'Identify 10 target companies.',deadline:'Oct 2026'},
+  {dim:'Recruiter Contacts x3',weight:8,status:'Not started',evidence:'3 Irish recruiters actively engaged',action:'Search LinkedIn for Irish ops recruiters.',deadline:'Sep 2026'},
+  {dim:'Migration Fund 1,500 OMR',weight:15,status:'Building',evidence:'Bank statement: 1,500 OMR saved',action:'Automate 200 OMR this month.',deadline:'Jun 2027'},
+  {dim:'Visa Route Confirmed',weight:7,status:'Research phase',evidence:'Written plan with immigration advisor',action:'Book 1hr with Irish immigration advisor.',deadline:'Q4 2026'},
+  {dim:'References x2',weight:7,status:'Informal',evidence:'2 formal reference letters ready',action:'Ask current manager for reference.',deadline:'Q1 2027'},
+  {dim:'Interview Readiness',weight:5,status:'Not tested',evidence:'Mock interview completed and recorded',action:'Do 1 mock interview from Irish questions.',deadline:'Q1 2027'},
+];
+
+const COO_STAGES=[
+  {stage:'Stage 1',title:'Operations Manager',current:true,color:'#059669',skills:['Process design','KPI management','Team coordination','Vendor management','Budget basics'],proof:['KPI dashboard you built','Process you improved','Team you led'],certs:['Google PM Certificate','PRINCE2 Foundation']},
+  {stage:'Stage 2',title:'Senior Operations Manager',current:false,color:'#1A3A5C',skills:['Multi-function oversight','Change management','Budgeting','Stakeholder mgmt'],proof:['P&L you managed','Change you led','Dashboard for leadership'],certs:['PMP','Lean Six Sigma Green Belt']},
+  {stage:'Stage 3',title:'Head of Operations',current:false,color:'#C9A84C',skills:['Full dept P&L','C-suite interaction','Strategy execution','People leadership'],proof:['Strategy you executed','Cost transformation','Team you developed'],certs:['MBA or Executive Program','CIPS Level 5']},
+  {stage:'Stage 4',title:'Director / VP of Operations',current:false,color:'#6B7280',skills:['M&A integration','Org design','External stakeholders','Global ops'],proof:['Org transformation story','International expansion','Board presentation'],certs:['Chartered Director','EMBA']},
+  {stage:'Stage 5',title:'Chief Operating Officer',current:false,color:'#0D1B2A',skills:['Company-wide execution','CEO partnership','Culture ownership','Capital allocation'],proof:['Company turnaround','Culture transformation','CEO succession plan'],certs:['Board Director cert','IoD']},
+];
+
+const AI_LEVELS=[
+  {level:'Beginner',color:'#059669',desc:'Learn what AI is and how it helps you',skills:['Prompt engineering basics','ChatGPT + Claude for work','AI writing tools','AI research tools'],projects:['Automate 3 email templates','Build a research prompt library'],cert:'Google AI Essentials',tools:['ChatGPT','Claude','Perplexity','Grammarly']},
+  {level:'Intermediate',color:'#1A3A5C',desc:'Use AI to do your job better and faster',skills:['Zapier / Make automation','AI for data analysis','AI dashboards','Google Sheets + AI'],projects:['Automate 1 work workflow','Build AI reporting dashboard'],cert:'Microsoft AI Fundamentals',tools:['Zapier','Make','Canva AI','Power BI']},
+  {level:'Advanced',color:'#C9A84C',desc:'Build AI systems that run without you',skills:['n8n workflows','AI agents','API integration','LLM prompt design'],projects:['Build 1 AI agent for a real task','Automate 1 process end-to-end'],cert:'IBM AI Engineering',tools:['n8n','OpenAI API','Claude API','Airtable + AI']},
+  {level:'Strategic Leader',color:'#0D1B2A',desc:'Drive AI adoption across your organization',skills:['AI strategy for business','AI ethics & governance','ROI for AI','Vendor evaluation'],projects:['Develop company AI policy','Present AI roadmap to leadership'],cert:'Executive AI Program',tools:['Azure OpenAI','Google Cloud AI','Custom GPTs']},
+];
+
+const TESTS=[
+  {id:'ielts',title:'IELTS Readiness',qs:[
+    {q:'Do you practice English listening 30+ min daily?',opts:['Never','Occasionally','Most days','Every day'],s:[0,1,2,3]},
+    {q:'Have you completed any IELTS mock tests?',opts:['None','1-2 attempts','3-5 attempts','6+ with review'],s:[0,1,2,3]},
+    {q:'Can you write a 250-word essay in 40 minutes?',opts:['Not really','Partially','Yes, roughly','Yes, comfortably'],s:[0,1,2,3]},
+    {q:'How often do you speak English in daily life?',opts:['Rarely','Sometimes','Most days','Daily conversations'],s:[0,1,2,3]},
+    {q:'Do you know all IELTS task types and formats?',opts:['No','Familiar','Know well','Practiced all'],s:[0,1,2,3]},
+    {q:'Do you read English articles or books regularly?',opts:['Never','Monthly','Weekly','Daily'],s:[0,1,2,3]},
+    {q:'Is your vocabulary strong for academic topics?',opts:['Weak','Basic','Moderate','Strong'],s:[0,1,2,3]},
+    {q:'Do you have a dedicated IELTS study plan?',opts:['No plan','Loose plan','Written plan','Daily system'],s:[0,1,2,3]},
+    {q:'Can you hold a 3-minute structured spoken response?',opts:['Difficult','With effort','Fairly well','Confidently'],s:[0,1,2,3]},
+    {q:'Do you review your English mistakes systematically?',opts:['Never','Rarely','Sometimes','Always'],s:[0,1,2,3]},
+  ],interp:['Below 10: IELTS fundamentals needed — begin daily practice now.','10-18: Building phase — increase practice to 60+ min daily.','19-24: On track — focus on weak bands and book mock test.','25-30: Advanced — book the exam within 2 months.']},
+  {id:'coo',title:'COO Readiness',qs:[
+    {q:'Do you understand a full P&L statement?',opts:['No','Basics','Moderate','Advanced'],s:[0,1,2,3]},
+    {q:'Have you led a cross-functional project?',opts:['No','Partially','Yes, small','Yes, major'],s:[0,1,2,3]},
+    {q:'Can you present strategy to senior leadership?',opts:['Not yet','With support','Independently','Confidently'],s:[0,1,2,3]},
+    {q:'Have you managed a budget?',opts:['No','Small budget','Dept budget','P&L responsibility'],s:[0,1,2,3]},
+    {q:'Do you understand change management models?',opts:['No','Heard of it','Know frameworks','Applied them'],s:[0,1,2,3]},
+    {q:'Can you identify and fix a broken process?',opts:['Not really','Partially','Yes, independently','Systems thinker'],s:[0,1,2,3]},
+    {q:'Do you mentor or develop others?',opts:['No','Informally','Formally','Systematically'],s:[0,1,2,3]},
+    {q:'Do you read leadership and strategy books?',opts:['Never','Occasionally','Monthly','Weekly'],s:[0,1,2,3]},
+    {q:'Can you influence without authority?',opts:['Not naturally','Sometimes','Often','Consistently'],s:[0,1,2,3]},
+    {q:'Do you think 12+ months ahead strategically?',opts:['Day to day','3 months','6 months','1+ year view'],s:[0,1,2,3]},
+  ],interp:['Below 10: Stage 1 ops manager — focus on fundamentals.','10-18: Developing leader — push toward senior manager level.','19-24: On the path — target Head of Ops within 3 years.','25-30: COO-track ready — actively pursue leadership scope.']},
+  {id:'migration',title:'Migration Readiness',qs:[
+    {q:'Do you have IELTS Band 7+ or equivalent?',opts:['No','Studying','Registered','Achieved'],s:[0,1,2,3]},
+    {q:'Is your CV in Irish/UK format?',opts:['No','Draft started','Mostly done','Fully optimized'],s:[0,1,2,3]},
+    {q:'Do you have 3+ recognized certifications?',opts:['None','1 cert','2 certs','3+ certs'],s:[0,1,2,3]},
+    {q:'Do you have 1,000+ OMR in migration fund?',opts:['No savings','< 500','500-1,000','1,000+'],s:[0,1,2,3]},
+    {q:'Have you researched your visa route?',opts:['No','Started','Know the route','Advisor consulted'],s:[0,1,2,3]},
+    {q:'Have you contacted Irish recruiters?',opts:['None','1-2','3-5','Active pipeline'],s:[0,1,2,3]},
+    {q:'Is your LinkedIn visible to Irish employers?',opts:['Not optimized','Partial','Mostly yes','Fully optimized'],s:[0,1,2,3]},
+    {q:'Do you have 2 formal references ready?',opts:['None','1 informal','1 formal','2+ formal'],s:[0,1,2,3]},
+    {q:'Have you applied to any Irish/UK jobs?',opts:['None','1-2','3-5','Active pipeline'],s:[0,1,2,3]},
+    {q:'Have you done mock interviews for UK/Ireland?',opts:['None','Practiced alone','1-2 mocks','Systematic prep'],s:[0,1,2,3]},
+  ],interp:['Below 10: Early planning — prioritize IELTS and savings now.','10-18: Building — CV, certs, and LinkedIn are next.','19-24: Execution — applications and recruiter relationships.','25-30: Pre-departure ready — visa achievable within 12 months.']},
+  {id:'ai',title:'AI Skill Level',qs:[
+    {q:'Do you use AI tools daily in your work?',opts:['Never','Occasionally','Often','Daily workflow'],s:[0,1,2,3]},
+    {q:'Can you write effective prompts for complex tasks?',opts:['Basic','Moderate','Good','Expert'],s:[0,1,2,3]},
+    {q:'Have you automated any work process with AI?',opts:['No','1 task','2-3 tasks','Multiple systems'],s:[0,1,2,3]},
+    {q:'Do you understand how LLMs work at a basic level?',opts:['No','Vaguely','Understand','Can explain'],s:[0,1,2,3]},
+    {q:'Can you build a Zapier or Make automation?',opts:['No','Attempted','Built 1','Multiple workflows'],s:[0,1,2,3]},
+    {q:'Have you used AI for data analysis?',opts:['No','Tried','Regularly','Expert level'],s:[0,1,2,3]},
+    {q:'Do you follow AI developments weekly?',opts:['Never','Monthly','Weekly','Daily'],s:[0,1,2,3]},
+    {q:'Can you explain AI ROI to non-technical managers?',opts:['No','Partially','Yes','Confidently'],s:[0,1,2,3]},
+    {q:'Have you built any AI-powered tool or dashboard?',opts:['No','Attempted','Built 1','Multiple built'],s:[0,1,2,3]},
+    {q:'Do you have AI skills on your CV/LinkedIn?',opts:['None','Mentioned','Listed','Featured'],s:[0,1,2,3]},
+  ],interp:['Below 10: Beginner — start Google AI Essentials this week.','10-18: Intermediate — push toward automation workflows.','19-24: Advanced — build portfolio projects.','25-30: Strategic level — lead AI in your organization.']},
+  {id:'leadership',title:'Leadership Maturity',qs:[
+    {q:'Do people seek your advice on important decisions?',opts:['Rarely','Sometimes','Often','Consistently'],s:[0,1,2,3]},
+    {q:'Do you communicate vision clearly to others?',opts:['Not clearly','Sometimes','Usually','Always'],s:[0,1,2,3]},
+    {q:'Can you handle conflict constructively?',opts:['Avoid it','With difficulty','Fairly well','Confidently'],s:[0,1,2,3]},
+    {q:'Do you take responsibility for outcomes?',opts:['Often blame others','Sometimes','Usually','Always'],s:[0,1,2,3]},
+    {q:'Do you invest in developing your team?',opts:['No','Occasionally','Regularly','Systematically'],s:[0,1,2,3]},
+    {q:'Can you think 12+ months ahead strategically?',opts:['Day to day','3 months','6 months','1+ year view'],s:[0,1,2,3]},
+    {q:'Do you act on feedback from others?',opts:['Rarely','Sometimes','Usually','Always'],s:[0,1,2,3]},
+    {q:'Do you read leadership books regularly?',opts:['Never','Rarely','Monthly','Weekly'],s:[0,1,2,3]},
+    {q:'Do you mentor others?',opts:['No','Informally','Regularly','Systematically'],s:[0,1,2,3]},
+    {q:'Do you decide under pressure calmly?',opts:['Struggle','Sometimes','Usually','Consistently'],s:[0,1,2,3]},
+  ],interp:['Below 10: Core habits needed — start with accountability.','10-18: Emerging leader — focus on vision and team dev.','19-24: Effective leader — push toward strategic thinking.','25-30: High-impact leader — seek COO-track opportunities.']},
+  {id:'productivity',title:'Productivity Consistency',qs:[
+    {q:'Do you review your goals weekly?',opts:['Never','Monthly','Weekly','Daily'],s:[0,1,2,3]},
+    {q:'Do you use a daily prioritization system?',opts:['No system','Ad-hoc','Partial','Full system'],s:[0,1,2,3]},
+    {q:'How often do you complete what you plan?',opts:['Rarely','Sometimes','Often','Almost always'],s:[0,1,2,3]},
+    {q:'Do you protect deep work time blocks?',opts:['No','Occasionally','Usually','Systematically'],s:[0,1,2,3]},
+    {q:'Do you track progress on major goals?',opts:['No','Loosely','Yes','With metrics'],s:[0,1,2,3]},
+    {q:'Do you review your week every Sunday?',opts:['Never','Monthly','Sometimes','Every Sunday'],s:[0,1,2,3]},
+    {q:'Do you batch similar tasks together?',opts:['Never','Rarely','Sometimes','Always'],s:[0,1,2,3]},
+    {q:'Do you eliminate low-value activities regularly?',opts:['No','Rarely','Sometimes','Systematically'],s:[0,1,2,3]},
+    {q:'Do you protect 8+ hours of sleep?',opts:['Rarely','Sometimes','Usually','Always'],s:[0,1,2,3]},
+    {q:'Do you have a shutdown ritual for work?',opts:['No','Informal','Yes, basic','Full protocol'],s:[0,1,2,3]},
+  ],interp:['Below 10: Reactive — set up a basic daily review.','10-18: Inconsistent — pick one system, 30 days straight.','19-24: Productive — fine-tune deep work and weekly reviews.','25-30: High-performer — teach others your system.']},
+  {id:'brand',title:'Personal Brand Authority',qs:[
+    {q:'Is your LinkedIn profile fully optimized?',opts:['Basic','Partial','Good','All-Star'],s:[0,1,2,3]},
+    {q:'Do you post on LinkedIn regularly?',opts:['Never','Monthly','Weekly','3x/week'],s:[0,1,2,3]},
+    {q:'Have you started a YouTube channel?',opts:['No','Created','1-5 videos','10+ videos'],s:[0,1,2,3]},
+    {q:'Do you have a personal website?',opts:['No','Domain only','Basic site','Professional site'],s:[0,1,2,3]},
+    {q:'Do people contact you for expertise?',opts:['Never','Rarely','Sometimes','Regularly'],s:[0,1,2,3]},
+    {q:'Have you written publicly (articles, posts)?',opts:['Never','1-2 pieces','5-10 pieces','Regular author'],s:[0,1,2,3]},
+    {q:'Do you have a defined content niche?',opts:['No','Vague idea','Defined','Consistently executed'],s:[0,1,2,3]},
+    {q:'Does your online presence reflect your goals?',opts:['Mismatch','Partially','Mostly','Fully aligned'],s:[0,1,2,3]},
+    {q:'Do you engage with others in your field?',opts:['Never','Rarely','Sometimes','Daily'],s:[0,1,2,3]},
+    {q:'Have you earned speaking/training through brand?',opts:['No','Informally','1 engagement','Multiple'],s:[0,1,2,3]},
+  ],interp:['Below 10: Invisible online — start LinkedIn optimization today.','10-18: Building — increase posting frequency, start video.','19-24: Growing — focus on consistency and niche authority.','25-30: Strong brand — monetize through consulting/courses.']},
+  {id:'finance',title:'Financial Growth Readiness',qs:[
+    {q:'Do you save at least 15% of income monthly?',opts:['No savings','< 10%','10-15%','15%+'],s:[0,1,2,3]},
+    {q:'Do you have 3+ months emergency fund?',opts:['None','< 1 month','1-2 months','3+ months'],s:[0,1,2,3]},
+    {q:'Is your monthly spending tracked?',opts:['No tracking','Loosely','Mostly','Precisely'],s:[0,1,2,3]},
+    {q:'Do you have income beyond salary?',opts:['Salary only','Trying','< 100 OMR/mo','100+ OMR/mo'],s:[0,1,2,3]},
+    {q:'Do you understand basic investment concepts?',opts:['None','Basics','Moderate','Can invest'],s:[0,1,2,3]},
+    {q:'Do you have a growing migration fund?',opts:['None','Started','200-600 OMR','600+ OMR'],s:[0,1,2,3]},
+    {q:'Have you cut unnecessary expenses this year?',opts:['No','1-2 cuts','Several','Systematically'],s:[0,1,2,3]},
+    {q:'Do you know your current net worth?',opts:['No idea','Rough guess','Know it','Track monthly'],s:[0,1,2,3]},
+    {q:'Do you have a written financial plan?',opts:['None','Mental plan','Written plan','System + targets'],s:[0,1,2,3]},
+    {q:'Are you growing income year over year?',opts:['Declining','Flat','Slight growth','Active growth'],s:[0,1,2,3]},
+  ],interp:['Below 10: Foundation needed — automate savings first.','10-18: Building stability — migration fund and emergency fund.','19-24: Growing — add online income stream.','25-30: Financially ready — invest and diversify.']},
+];
+
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+let currentPage='home';
+function nav(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const pg=document.getElementById('page-'+id);
+  if(pg) pg.classList.add('active');
+  currentPage=id;
+  closeSidebar();
+  window.scrollTo({top:0,behavior:'instant'});
+  // bottom nav highlight
+  document.querySelectorAll('.bn-btn').forEach(b=>b.classList.remove('active'));
+  const bnMap={home:'bn-home'};
+  if(bnMap[id]) document.getElementById(bnMap[id])?.classList.add('active');
+}
+
+let currentTab='daily';
+function switchTab(tab){
+  currentTab=tab;
+  ['daily','weekly','monthly'].forEach(t=>{
+    document.getElementById('tbtn-'+t)?.classList.toggle('active',t===tab);
+    document.getElementById('tp-'+t)?.classList.toggle('active',t===tab);
+  });
+  const bnMap={daily:'bn-daily',weekly:'bn-weekly',monthly:'bn-monthly'};
+  document.querySelectorAll('.bn-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(bnMap[tab])?.classList.add('active');
+}
+
+function toggleSidebar(){
+  const sb=document.getElementById('sidebar');
+  const ov=document.getElementById('overlay');
+  const isOpen=sb.classList.contains('open');
+  if(isOpen){closeSidebar();}else{sb.classList.add('open');ov.classList.add('open');}
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════
+// BUILD FUNCTIONS
+// ═══════════════════════════════════════════
+const PC={'CRITICAL':'bc','HIGH':'bh','MEDIUM':'bm','LOW':'bok'};
+
+function buildKPIs(){
+  document.getElementById('kpi-grid').innerHTML=KPI_DATA.map(k=>`
+    <div class="kpi" style="margin-bottom:10px">
+      <div class="kpi-lbl">${k.label}</div>
+      <div class="kpi-val">
+        <input type="number" min="0" max="100" value="0" id="kpi-${k.id}" oninput="updateKPI('${k.id}',this.value)">
+        <span style="font-size:13px;color:var(--gray4)">/100</span>
+      </div>
+      <div class="bar"><div class="bar-fill" id="kpibar-${k.id}"></div></div>
+      <div class="kpi-act">${k.action}</div>
+      <span class="badge ${PC[k.priority]||'bm'}">${k.priority}</span>
+    </div>
+  `).join('');
+}
+function updateKPI(id,val){
+  val=Math.min(100,Math.max(0,parseInt(val)||0));
+  const b=document.getElementById('kpibar-'+id);
+  if(b) b.style.width=val+'%';
+  updateMaster();
+}
+function updateMaster(){
+  let t=0;
+  KPI_DATA.forEach(k=>{ t+=(KPI_W[k.id]||.05)*(parseInt(document.getElementById('kpi-'+k.id)?.value)||0); });
+  t=Math.round(t);
+  document.getElementById('master-score').textContent=t;
+  document.getElementById('master-bar-fill').style.width=t+'%';
+  const s=document.getElementById('master-status');
+  if(s) s.textContent=t<20?'Early stage. Focus on IELTS and migration fundamentals.':t<40?'Building. Language and career actions moving the needle.':t<60?'Momentum. Execution happening across dimensions.':t<80?'Advanced. Dublin 2027 clearly achievable.':'Dublin-ready. Execute the final steps.';
+}
+
+function buildDomains(){
+  document.getElementById('domains-grid').innerHTML=DOMAINS.map(d=>`
+    <div class="dom-card">
+      <div class="dom-num">${d.num}</div>
+      <div class="dom-icon">${d.icon}</div>
+      <div class="dom-title">${d.title}</div>
+      <div class="dom-purpose">${d.purpose}</div>
+      <div class="dom-target">🎯 ${d.target}</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:6px;line-height:1.4">📅 ${d.weekly}</div>
+      <div class="dom-risk">⚠️ ${d.risk}</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+        <span style="font-size:11px;color:var(--gray4)">Score:</span>
+        <input type="number" min="0" max="100" value="0" id="dom-${d.num}" class="inp" style="width:60px;min-height:38px;padding:4px 8px;font-weight:700;font-family:var(--fh);text-align:center">
+        <span style="font-size:11px;color:var(--gray4)">/100</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function buildRoadmap(){
+  document.getElementById('roadmap-tl').innerHTML=ROADMAP.map(r=>`
+    <div class="tl-item">
+      <div class="tl-dot" style="background:${r.color}"></div>
+      <div class="tl-lbl">${r.period}</div>
+      <div class="tl-title" style="color:${r.color}">${r.label}</div>
+      <div class="tl-grid">${r.cells.map(c=>`<div class="tl-cell"><div class="tl-cell-lbl">${c.l}</div><div class="tl-cell-val">${c.v}</div></div>`).join('')}</div>
+    </div>
+  `).join('');
+}
+
+function buildLearn(){
+  document.getElementById('learn-cards').innerHTML=LEARN_CATS.map(r=>`
+    <div class="m-card">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <span style="font-family:var(--fm);font-weight:700;font-size:13px;color:var(--gold);flex-shrink:0">${r[0]}</span>
+        <div style="font-weight:600;font-size:14px;color:var(--navy);flex:1">${r[1]}</div>
+        <span class="badge ${PC[r[2]]||'bm'}">${r[2]}</span>
+      </div>
+      <div class="m-card-row"><span class="m-card-lbl">Method</span><span class="m-card-val">${r[3]}</span></div>
+      <div class="m-card-row"><span class="m-card-lbl">Certification</span><span class="m-card-val">${r[4]}</span></div>
+      <div class="m-card-row"><span class="m-card-lbl">Weekly Min</span><span class="m-card-val">${r[5]}</span></div>
+    </div>
+  `).join('');
+}
+
+function buildBacklog(){
+  const secs=[{k:'now',l:'NOW — Active Sprint (90 Days)',c:'bl-now'},{k:'next',l:'NEXT — Queue (Months 4-9)',c:'bl-next'},{k:'later',l:'LATER — Backlog (Month 10+)',c:'bl-later'},{k:'someday',l:'SOMEDAY — Future Vision',c:'bl-someday'}];
+  let h='';
+  secs.forEach(s=>{
+    h+=`<div class="bl-head ${s.c}"><h4>${s.l}</h4><span class="cnt">${BACKLOG[s.k].length}</span></div>`;
+    BACKLOG[s.k].forEach((item,i)=>{
+      h+=`<div class="bl-item"><input type="checkbox" id="bl-${s.k}-${i}" onchange="autoSave()">
+        <div class="bl-item-body"><div class="bl-item-name">${item[0]}</div>
+        <div class="bl-item-meta"><span class="badge ${PC[item[2]]||'bm'}">${item[2]}</span><span style="font-size:11px;color:var(--text3)">${item[3]}</span></div>
+        <div class="bl-item-why">${item[1]}</div></div></div>`;
+    });
+  });
+  document.getElementById('backlog-wrap').innerHTML=h;
+}
+
+function buildCerts(){
+  document.getElementById('certs-wrap').innerHTML=CERTS.map((c,i)=>`
+    <div class="m-card" style="display:flex;gap:12px;align-items:flex-start">
+      <input type="checkbox" id="cert-${i}" onchange="autoSave()" style="margin-top:2px">
+      <div style="flex:1">
+        <div class="m-card-title">${c.name}</div>
+        <div class="m-card-row"><span class="m-card-lbl">Platform</span><span class="m-card-val">${c.platform}</span></div>
+        <div class="m-card-row"><span class="m-card-lbl">Cost</span><span class="m-card-val"><span class="badge ${c.cost==='FREE'||c.cost==='FREE*'?'bok':'bc'}">${c.cost}</span></span></div>
+        <div class="m-card-row"><span class="m-card-lbl">Time</span><span class="m-card-val">${c.time}</span></div>
+        <div class="m-card-row"><span class="m-card-lbl">Career Value</span><span class="m-card-val">${c.career}</span></div>
+        <div class="m-card-row"><span class="m-card-lbl">Migration</span><span class="m-card-val">${c.mig}</span></div>
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><span class="badge ${PC[c.pri]||'bm'}">${c.pri}</span><span style="font-size:11px;color:var(--text3)">🗓 ${c.target}</span></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function buildDaily(){
+  const groups=[
+    {id:'d-ielts',items:['45 min IELTS practice (Listening or Reading)','BBC Radio 4 / TED Talk — 20 min English immersion','Writing: 1 Task 1 or Task 2 (alternate days)','Vocabulary: learn 10 new academic words']},
+    {id:'d-ai',items:['Use AI for 1 real work task today','Check AI newsletter or 1 AI update','Apply 1 new prompt technique to a real problem']},
+    {id:'d-career',items:['1 career action: apply, email, or Irish market research','Update MILAD OS scores (2 min)','1 migration action: document, research, or recruiter outreach']},
+    {id:'d-health',items:['Workout or 8,000 steps (if scheduled day)','Zero cigarettes today — non-negotiable','LinkedIn post or content creation (15 min)','5-min evening reflection']},
+  ];
+  groups.forEach(g=>{
+    document.getElementById(g.id).innerHTML=g.items.map((item,i)=>`
+      <li class="chk-li"><input type="checkbox" id="${g.id}-${i}" onchange="autoSave()"><label for="${g.id}-${i}">${item}</label></li>
+    `).join('');
+  });
+  const scoreQs=['English practice completed?','Migration action taken?','IELTS practice done?','Content created or planned?','Workout done (if scheduled)?','Zero cigarettes today?'];
+  document.getElementById('d-score-wrap').innerHTML=`
+    <div style="font-family:var(--fm);font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">Daily Score /60</div>
+    ${scoreQs.map((q,i)=>`<div class="score-row"><label for="dscore-${i}">${q}</label><div style="display:flex;align-items:center;gap:5px"><input type="number" min="0" max="10" value="0" id="dscore-${i}" class="inp" style="width:52px;min-height:38px;padding:4px 6px;text-align:center;font-weight:700;font-family:var(--fh)" oninput="updateDailyScore()"><span style="font-size:11px;color:var(--gray4)">/10</span></div></div>`).join('')}
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0 4px;border-top:2px solid var(--gold3);margin-top:8px">
+      <span style="font-family:var(--fh);font-weight:700;font-size:15px;color:var(--navy)">Daily Total</span>
+      <span style="font-family:var(--fh);font-weight:800;font-size:26px;color:var(--navy)" id="daily-total">0</span>
+    </div>
+    <div class="bar" style="margin:0"><div class="bar-fill" id="daily-bar"></div></div>
+  `;
+}
+function updateDailyScore(){
+  let t=0; for(let i=0;i<6;i++) t+=parseInt(document.getElementById('dscore-'+i)?.value)||0;
+  document.getElementById('daily-total').textContent=t;
+  document.getElementById('daily-bar').style.width=(t/60*100)+'%';
+}
+
+function buildWeekly(){
+  const metrics=[['wm0','English practice sessions','7'],['wm1','IELTS study hours','5 hrs'],['wm2','Workouts','3'],['wm3','LinkedIn posts','3'],['wm4','YouTube videos','1'],['wm5','OMR saved','50 OMR'],['wm6','Migration actions','3'],['wm7','Learning hours','8 hrs'],['wm8','Smoke-free days','7']];
+  document.getElementById('w-metrics').innerHTML=metrics.map(m=>`
+    <div class="score-row"><label>Target ${m[2]} — ${m[1]}</label><input type="text" id="${m[0]}" class="inp" style="width:80px;min-height:36px;padding:4px 8px;font-size:13px" placeholder="..."></div>
+  `).join('');
+  const scoreRows=[['ws0','Migration / IELTS',20],['ws1','Career Actions',15],['ws2','Brand / Content',15],['ws3','Financial',15],['ws4','Health',20],['ws5','Life / Marriage',15]];
+  document.getElementById('w-scorecard').innerHTML=`
+    ${scoreRows.map(r=>`<div class="score-row"><label>${r[1]}</label><div style="display:flex;align-items:center;gap:5px"><input type="number" min="0" max="${r[2]}" value="0" id="${r[0]}" class="inp" style="width:52px;min-height:36px;padding:4px 6px;text-align:center;font-weight:700;font-family:var(--fh)" oninput="updateWeeklyScore()"><span style="font-size:11px;color:var(--gray4)">/${r[2]}</span></div></div>`).join('')}
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0 4px;border-top:2px solid var(--gold3);margin-top:4px">
+      <span style="font-family:var(--fh);font-weight:700;font-size:15px;color:var(--navy)">Weekly Total</span>
+      <span style="font-family:var(--fh);font-weight:800;font-size:26px;color:var(--navy)" id="weekly-total">0</span>
+    </div>
+    <div class="bar" style="margin:0"><div class="bar-fill" id="weekly-bar"></div></div>
+  `;
+  const qs=['What was the #1 thing I did for Dublin 2027 this week?','What did I plan but not do? Why?','What was my biggest energy drain?','How is English improving? Weakest area?','Is the financial plan working? Savings on track?','What did I learn that changed how I think?','Am I the person who deserves to live in Dublin in 2027?','What must DOUBLE next week? What must STOP?'];
+  document.getElementById('w-qs').innerHTML=qs.map((q,i)=>`
+    <div class="card" style="margin-bottom:10px">
+      <div style="font-family:var(--fm);font-size:10px;color:var(--gold);margin-bottom:6px">Q${i+1}</div>
+      <div style="font-size:13px;font-weight:500;color:var(--navy);margin-bottom:8px;line-height:1.4">${q}</div>
+      <textarea class="inp" id="wq${i}" style="min-height:52px" placeholder="Your answer..."></textarea>
+    </div>
+  `).join('');
+}
+function updateWeeklyScore(){
+  let t=0; for(let i=0;i<6;i++) t+=parseInt(document.getElementById('ws'+i)?.value)||0;
+  document.getElementById('weekly-total').textContent=t;
+  document.getElementById('weekly-bar').style.width=t+'%';
+}
+
+function buildMonthly(){
+  const kpis=[['mk0','IELTS Progress','R:__ W:__ L:__ S:__'],['mk1','Learning Hours','__ hrs / target 12'],['mk2','Certs Earned',''],['mk3','Job Applications',''],['mk4','Income This Month','__ OMR / Online: __'],['mk5','Amount Saved','__ OMR / Fund: __'],['mk6','YouTube Videos','__ / Subs: __'],['mk7','LinkedIn Posts','__ / Followers: __'],['mk8','Workouts','__ / Smoke-free: __ days'],['mk9','Dublin Readiness Score','__ / 100']];
+  document.getElementById('m-kpis').innerHTML=kpis.map(m=>`
+    <div class="score-row"><label>${m[1]}</label><input type="text" id="${m[0]}" class="inp" style="width:130px;min-height:36px;padding:4px 8px;font-size:12px" placeholder="${m[2]||'...'}"></div>
+  `).join('');
+  const boardQs=['Am I 4 weeks closer to Dublin? What is the clearest evidence?','What one decision made the biggest difference this month?','What is the critical path item for the next 30 days?','Is the system working or just tracked? What changes?','START / STOP / CONTINUE for next month?','What would the 2027 Milad think of this month?'];
+  document.getElementById('m-board-qs').innerHTML=boardQs.map((q,i)=>`
+    <div class="card" style="margin-bottom:10px">
+      <div style="font-family:var(--fm);font-size:10px;color:var(--gold);margin-bottom:5px">BOARD Q${i+1}</div>
+      <div style="font-size:13px;font-weight:500;color:var(--navy);margin-bottom:8px;line-height:1.4">${q}</div>
+      <textarea class="inp" id="mq${i}" style="min-height:56px" placeholder="Board-level answer..."></textarea>
+    </div>
+  `).join('');
+}
+
+function buildIELTS(){
+  const bands=[{id:'iel-l',label:'Listening',t:'7.5+'},{id:'iel-r',label:'Reading',t:'7.0+'},{id:'iel-w',label:'Writing',t:'7.0+'},{id:'iel-s',label:'Speaking',t:'7.0+'}];
+  document.getElementById('ielts-bands').innerHTML=bands.map(b=>`
+    <div class="kpi">
+      <div class="kpi-lbl">${b.label}</div>
+      <div class="kpi-val"><input type="number" min="0" max="9" step=".5" value="0" id="${b.id}" oninput="updIELTS('${b.id}',this.value)" style="width:60px"><span style="font-size:13px;color:var(--gray4)">/9</span></div>
+      <div class="bar"><div class="bar-fill" id="${b.id}-bar"></div></div>
+      <span class="badge bh">Target ${b.t}</span>
+    </div>
+  `).join('');
+  const daily=[{s:'Listening',t:['BBC Radio 4 — 20 min, note 10 words','TED Talk without subtitles first','IELTS Sections 1-4 practice test']},{s:'Reading',t:['2 IELTS Academic reading passages','Guardian/BBC — 3 sentence summary','Skim/scan: 800 words in 10 min']},{s:'Writing',t:['Task 2: full essay 40 min, 250+ words','Task 1: describe chart/graph 20 min','Review and improve yesterday\'s writing']},{s:'Speaking',t:['Record 2-min Part 2 prompt answer','Shadow native speaker 10 minutes','10 new academic words review']}];
+  document.getElementById('ielts-tasks').innerHTML=daily.map(s=>`
+    <div class="card" style="margin-bottom:10px">
+      <div style="font-family:var(--fm);font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">${s.s}</div>
+      <ul class="chk-list">${s.t.map((t,i)=>`<li class="chk-li"><input type="checkbox" id="ielts${s.s}${i}" onchange="autoSave()"><label for="ielts${s.s}${i}">${t}</label></li>`).join('')}</ul>
+    </div>
+  `).join('');
+  const prompts=['Describe a person who has influenced you.','Talk about a challenge you have overcome.','Describe your ideal work environment.','Talk about a book or film that impressed you.','Describe a skill you would like to learn.','Talk about a place you would like to visit.','Describe a memorable celebration or event.','Talk about an important decision you made.'];
+  document.getElementById('speaking-bank').innerHTML=prompts.map((p,i)=>`
+    <div style="padding:8px 0;border-bottom:1px solid var(--gray3);font-size:13px;display:flex;gap:10px">
+      <span style="font-family:var(--fm);font-size:10px;color:var(--gold);flex-shrink:0;padding-top:2px">P${i+1}</span>
+      <span style="color:var(--text2)">${p}</span>
+    </div>
+  `).join('');
+  document.getElementById('writing-chk').innerHTML=[{l:'STRUCTURE',it:['Introduction: paraphrase + thesis','Body 1: argument + evidence + example','Body 2: argument + evidence + example','Conclusion: summarize + restate']},{l:'QUALITY CHECK',it:['250+ words (Task 2) / 150+ (Task 1)','No informal contractions','Varied sentence structures used','Academic vocabulary throughout']}].map(w=>`
+    <div class="card"><div style="font-family:var(--fm);font-size:10px;color:var(--gold);text-transform:uppercase;margin-bottom:8px">${w.l}</div><ul class="chk-list">${w.it.map((t,i)=>`<li class="chk-li"><input type="checkbox" id="wchk${w.l}${i}" onchange="autoSave()"><label for="wchk${w.l}${i}">${t}</label></li>`).join('')}</ul></div>
+  `).join('');
+}
+function updIELTS(id,val){
+  const b=document.getElementById(id+'-bar');
+  if(b) b.style.width=(parseFloat(val)||0)/9*100+'%';
+  autoSave();
+}
+
+function buildMigration(){
+  const sc={'Not started':'bc','Draft needed':'bh','In progress':'bh','Partial':'bm','Building':'bm','Research phase':'bm','Informal':'bm'};
+  document.getElementById('mig-items').innerHTML=MIG_ITEMS.map((m,i)=>`
+    <div class="m-card">
+      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:8px">
+        <input type="checkbox" id="mig${i}" onchange="updateMigScore();autoSave()" style="margin-top:2px">
+        <div style="flex:1"><div class="m-card-title">${m.dim}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px"><span class="badge ${sc[m.status]||'bm'}">${m.status}</span><span style="font-family:var(--fm);font-size:10px;color:var(--gold)">${m.weight} pts</span></div></div>
+      </div>
+      <div class="m-card-row"><span class="m-card-lbl">Evidence needed</span><span class="m-card-val">${m.evidence}</span></div>
+      <div class="m-card-row"><span class="m-card-lbl">Next action</span><span class="m-card-val" style="color:var(--navy3);font-weight:600">${m.action}</span></div>
+      <div class="m-card-row"><span class="m-card-lbl">Deadline</span><span class="m-card-val">${m.deadline}</span></div>
+    </div>
+  `).join('');
+}
+function updateMigScore(){
+  let s=0; MIG_ITEMS.forEach((_,i)=>{ if(document.getElementById('mig'+i)?.checked) s+=MIG_ITEMS[i].weight; });
+  document.getElementById('mig-score').textContent=s;
+  document.getElementById('mig-bar').style.width=s+'%';
+  const t=document.getElementById('mig-status');
+  if(t) t.textContent=s<31?'Early planning. Prioritize IELTS and savings.':s<51?'Building. CV, certs, LinkedIn active.':s<71?'Execution. Applications and recruiters.':s<86?'Pre-departure ready. Offer likely in 6 months.':'Dublin-ready. Execute the move.';
+}
+
+function buildCOO(){
+  document.getElementById('coo-stages').innerHTML=COO_STAGES.map(s=>`
+    <div class="coo-card" style="border-left:4px solid ${s.color}">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <div style="width:40px;height:40px;border-radius:50%;background:${s.color};display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--fh);font-weight:700;font-size:11px;flex-shrink:0">${s.stage.replace('Stage ','S')}</div>
+        <div><div style="font-family:var(--fh);font-weight:800;font-size:15px;color:${s.color}">${s.title}</div>${s.current?'<span class="badge bok">CURRENT</span>':''}</div>
+      </div>
+      <div style="margin-bottom:8px"><div style="font-size:10px;font-weight:700;color:var(--gray4);text-transform:uppercase;font-family:var(--fm);margin-bottom:5px">Core Skills</div>${s.skills.map(sk=>`<div style="padding:3px 0;font-size:12px;color:var(--text2);border-bottom:1px solid var(--gray3)">• ${sk}</div>`).join('')}</div>
+      <div style="margin-bottom:8px"><div style="font-size:10px;font-weight:700;color:var(--gray4);text-transform:uppercase;font-family:var(--fm);margin-bottom:5px">Portfolio Evidence</div>${s.proof.map(p=>`<div style="padding:3px 0;font-size:12px;color:var(--text2);border-bottom:1px solid var(--gray3)">→ ${p}</div>`).join('')}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px">${s.certs.map(c=>`<span class="badge bh">${c}</span>`).join('')}</div>
+    </div>
+  `).join('');
+}
+
+function buildAI(){
+  document.getElementById('ai-levels').innerHTML=AI_LEVELS.map(l=>`
+    <div class="ai-card" style="border-left-color:${l.color}">
+      <div style="margin-bottom:10px"><div style="font-family:var(--fh);font-weight:800;font-size:16px;color:${l.color}">${l.level}</div><div style="font-size:12px;color:var(--text3)">${l.desc}</div></div>
+      <div style="margin-bottom:8px"><div style="font-size:10px;font-weight:700;color:var(--gray4);text-transform:uppercase;font-family:var(--fm);margin-bottom:4px">Skills</div>${l.skills.map(s=>`<div style="padding:3px 0;font-size:12px;border-bottom:1px solid var(--gray3)">• ${s}</div>`).join('')}</div>
+      <div style="margin-bottom:8px"><div style="font-size:10px;font-weight:700;color:var(--gray4);text-transform:uppercase;font-family:var(--fm);margin-bottom:4px">Portfolio Projects</div>${l.projects.map(p=>`<div style="padding:3px 0;font-size:12px;border-bottom:1px solid var(--gray3)">→ ${p}</div>`).join('')}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px">${l.tools.map(t=>`<span class="badge bm">${t}</span>`).join('')}</div>
+      <span class="badge bh">Cert: ${l.cert}</span>
+    </div>
+  `).join('');
+}
+
+function buildBrand(){
+  document.getElementById('brand-kpis').innerHTML=[{l:'YouTube Subs',v:'500',s:'12M target'},{l:'LinkedIn',v:'750',s:'followers target'},{l:'Watch Hours',v:'1,000',s:'hours target'}].map(k=>`
+    <div class="kpi"><div class="kpi-lbl">${k.l}</div><div style="font-family:var(--fh);font-weight:800;font-size:24px;color:var(--navy)">${k.v}</div><div style="font-size:11px;color:var(--text3);margin-top:2px">${k.s}</div></div>
+  `).join('');
+  document.getElementById('brand-pillars').innerHTML=['Productivity Systems','Operations & Business','Career Development','International Journey','Personal Growth & Identity','AI for Business','The Dublin Transition'].map((p,i)=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--gray3)">
+      <div style="width:22px;height:22px;border-radius:50%;background:var(--navy);color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">${i+1}</div>
+      <span style="font-size:13px;color:var(--text2);font-weight:500">${p}</span>
+    </div>
+  `).join('');
+  document.getElementById('brand-weekly').innerHTML=['YouTube: 1 video/week — 8-15 min educational','LinkedIn: 3 posts/week — text + carousel','LinkedIn Articles: 1 per month — long-form guide'].map((p,i)=>`
+    <div class="card" style="margin-bottom:10px"><div style="font-weight:600;font-size:13px;color:var(--navy);margin-bottom:8px">${p}</div><textarea class="inp" style="min-height:44px" id="brand-idea-${i}" placeholder="This week's content idea..."></textarea></div>
+  `).join('');
+}
+
+function buildWealth(){
+  document.getElementById('wealth-kpis').innerHTML=`
+    <div class="kpi"><div class="kpi-lbl">Current Income</div><div class="kpi-val"><input type="number" value="700" id="inc-current" style="width:90px;font-size:22px"> <span style="font-size:13px;color:var(--gray4)">OMR</span></div></div>
+    <div class="kpi"><div class="kpi-lbl">Monthly Savings</div><div class="kpi-val"><input type="number" value="0" id="savings" style="width:90px;font-size:22px"> <span style="font-size:13px;color:var(--gray4)">OMR</span></div></div>
+    <div class="kpi"><div class="kpi-lbl">3M Target</div><div style="font-family:var(--fh);font-weight:800;font-size:22px;color:var(--navy);margin-top:4px">1,000 <span style="font-size:13px;font-weight:400;color:var(--gray4)">OMR</span></div></div>
+    <div class="kpi"><div class="kpi-lbl">Migration Fund</div><div class="kpi-val"><input type="number" value="0" id="mig-fund" style="width:90px;font-size:22px"> <span style="font-size:13px;color:var(--gray4)">OMR</span></div></div>
+  `;
+  document.getElementById('wealth-actions').innerHTML=[
+    ['Salary increase negotiation','Ops performance evidence','300+ OMR/mo','Aug 2026'],
+    ['Online consulting (1 client)','LinkedIn + English','200+ OMR/mo','Q4 2026'],
+    ['YouTube AdSense','1,000 subs + 4K hrs','50-200 OMR/mo','2027'],
+    ['Digital course / guide','Knowledge + content system','100-500 OMR','2027'],
+    ['Corporate training delivery','Ops + productivity expertise','200+ OMR/project','2027'],
+    ['Affiliate income','YouTube + website traffic','50-100 OMR/mo','2028'],
+  ].map((r,i)=>`
+    <div class="m-card" style="display:flex;align-items:flex-start;gap:12px">
+      <input type="checkbox" id="wact${i}" onchange="autoSave()" style="margin-top:2px">
+      <div style="flex:1"><div class="m-card-title">${r[0]}</div>
+        <div class="m-card-row"><span class="m-card-lbl">Skill needed</span><span class="m-card-val">${r[1]}</span></div>
+        <div class="m-card-row"><span class="m-card-lbl">Potential</span><span class="m-card-val" style="color:var(--green);font-weight:700">${r[2]}</span></div>
+        <div class="m-card-row"><span class="m-card-lbl">Deadline</span><span class="m-card-val">${r[3]}</span></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function buildHealth(){
+  document.getElementById('health-kpis').innerHTML=`
+    <div class="kpi"><div class="kpi-lbl">Workouts/Week</div><div class="kpi-val"><input type="number" min="0" max="7" value="0" id="h-workouts" style="width:60px;font-size:24px"> <span style="font-size:12px;color:var(--gray4)">/7</span></div></div>
+    <div class="kpi"><div class="kpi-lbl">Sleep Hours</div><div class="kpi-val"><input type="number" min="0" max="12" value="0" id="h-sleep" style="width:60px;font-size:24px"> <span style="font-size:12px;color:var(--gray4)">hrs</span></div></div>
+    <div class="kpi"><div class="kpi-lbl">Energy Level</div><div class="kpi-val"><input type="number" min="0" max="10" value="0" id="h-energy" style="width:60px;font-size:24px"> <span style="font-size:12px;color:var(--gray4)">/10</span></div></div>
+    <div class="kpi"><div class="kpi-lbl">Stress Level</div><div class="kpi-val"><input type="number" min="0" max="10" value="0" id="h-stress" style="width:60px;font-size:24px"> <span style="font-size:12px;color:var(--gray4)">/10</span></div></div>
+  `;
+  const habits=['Workout / Exercise','8,000+ steps','7+ hrs sleep','No cigarettes','Healthy meals (80%)','Hydration 2L','Morning walk'];
+  const days=['M','T','W','T','F','S','S'];
+  document.getElementById('health-habits').innerHTML=habits.map((h,hi)=>`
+    <div class="habit-row">
+      <span style="font-size:13px;font-weight:500;color:var(--text2);flex:1">${h}</span>
+      <div class="habit-days">${days.map((d,di)=>`<div class="habit-day"><span>${d}</span><input type="checkbox" id="hh${hi}${di}" onchange="autoSave()"></div>`).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function buildTests(){
+  document.getElementById('tests-wrap').innerHTML=TESTS.map((test,ti)=>`
+    <div class="card" style="margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:8px;flex-wrap:wrap">
+        <div><div style="font-family:var(--fm);font-size:10px;color:var(--gold);margin-bottom:3px">TEST ${String(ti+1).padStart(2,'0')}</div><div style="font-family:var(--fh);font-weight:800;font-size:17px;color:var(--navy)">${test.title}</div></div>
+        <div><span style="font-size:12px;color:var(--text3)">Score: </span><span style="font-family:var(--fh);font-weight:800;font-size:20px;color:var(--navy)" id="ts${ti}">0</span><span style="font-size:12px;color:var(--gray4)">/30</span></div>
+      </div>
+      ${test.qs.map((q,qi)=>`<div class="quiz-q"><p>${q.q}</p><div class="quiz-opts">${q.opts.map((opt,oi)=>`<label class="quiz-opt"><input type="radio" name="t${ti}q${qi}" value="${q.s[oi]}" onchange="calcTest(${ti})"> ${opt}</label>`).join('')}</div></div>`).join('')}
+      <div class="quiz-result" id="tr${ti}"><span id="trt${ti}"></span></div>
+    </div>
+  `).join('');
+}
+function calcTest(ti){
+  let s=0; TESTS[ti].qs.forEach((_,qi)=>{ const el=document.querySelector(`input[name="t${ti}q${qi}"]:checked`); if(el) s+=parseInt(el.value); });
+  document.getElementById('ts'+ti).textContent=s;
+  const r=document.getElementById('tr'+ti), t=document.getElementById('trt'+ti);
+  const thresh=[0,10,19,25]; let msg=TESTS[ti].interp[3];
+  for(let i=0;i<thresh.length-1;i++){ if(s>=thresh[i]&&s<thresh[i+1]){msg=TESTS[ti].interp[i];break;} }
+  t.textContent=msg; r.className='quiz-result show '+(s>20?'good':s>12?'mid':'low');
+}
+
+function buildTemplates(){
+  const tpls=[
+    {title:'Daily Review',fields:['Date','Top 3 wins','Biggest challenge','Tomorrow priority','Energy /10']},
+    {title:'Weekly Review',fields:['Week of','Goals achieved','Goals missed','Top learning','Next focus']},
+    {title:'IELTS Mistake Log',fields:['Date','Skill','Mistake type','Correct version','Prevention']},
+    {title:'Learning Session Log',fields:['Date','Topic','Source','Time','Key takeaway']},
+    {title:'Cert Tracker',fields:['Cert name','Platform','Start','% complete','Done date']},
+    {title:'Job Applications',fields:['Company','Role','Applied','Status','Next action']},
+    {title:'LinkedIn Tracker',fields:['Topic','Date','Impressions','Likes','Comments']},
+    {title:'AI Experiment Log',fields:['Date','Tool','Task','Result','Repeat?']},
+    {title:'Brand Idea Bank',fields:['Content idea','Pillar','Format','Priority','Status']},
+    {title:'Decision Log',fields:['Date','Decision','Options','Choice','Review date']},
+    {title:'Meeting Reflection',fields:['Meeting','Date','Decisions','My contribution','Follow-up']},
+    {title:'Monthly Review',fields:['Month','Dublin score','Top achievement','Gap','Strategy change']},
+  ];
+  document.getElementById('templates-wrap').innerHTML=tpls.map((t,ti)=>`
+    <div class="card" style="margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <div style="width:28px;height:28px;border-radius:4px;background:var(--navy);color:var(--gold);display:flex;align-items:center;justify-content:center;font-family:var(--fh);font-weight:800;font-size:11px;flex-shrink:0">${String(ti+1).padStart(2,'0')}</div>
+        <div style="font-family:var(--fh);font-weight:700;font-size:14px;color:var(--navy)">${t.title}</div>
+      </div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:11px;min-width:${t.fields.length*80}px">
+          <thead><tr>${t.fields.map(f=>`<th style="background:var(--gray2);padding:5px 6px;text-align:left;font-size:10px;color:var(--gray4);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">${f}</th>`).join('')}</tr></thead>
+          <tbody>${[0,1,2].map(r=>`<tr>${t.fields.map((_,fi)=>`<td style="border-bottom:1px solid var(--gray3);padding:3px"><input type="text" style="width:100%;border:none;background:transparent;font-size:11px;min-height:32px;padding:2px 4px;outline:none;color:var(--text2)" placeholder="..." id="tpl${ti}${r}${fi}"></td>`).join('')}</tr>`).join('')}</tbody>
+        </table>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════
+// STORAGE
+// ═══════════════════════════════════════════
+let autoSaveTimer=null;
+const SK='MILADOSV2';
+function autoSave(){
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer=setTimeout(()=>saveAll(true),900);
+}
+function saveAll(silent=false){
+  const data={};
+  document.querySelectorAll('[id]').forEach(el=>{
+    if(!el.id) return;
+    if(el.type==='checkbox') data[el.id]=el.checked;
+    else if(el.type==='radio') return;
+    else if(el.tagName==='INPUT'||el.tagName==='TEXTAREA'||el.tagName==='SELECT') data[el.id]=el.value;
+  });
+  document.querySelectorAll('input[type=radio]:checked').forEach(r=>{ if(r.name) data['radio_'+r.name]=r.value; });
+  data['_ts']=new Date().toLocaleString();
+  try{ localStorage.setItem(SK,JSON.stringify(data)); }catch(e){ console.warn('Save failed',e); return; }
+  const ts=data['_ts'];
+  document.getElementById('last-saved').textContent=ts;
+  const stsEl=document.getElementById('settings-ts'); if(stsEl) stsEl.textContent=ts;
+  const ind=document.getElementById('save-ind');
+  if(ind){ ind.textContent=silent?'auto-saved':'saved ✓'; ind.classList.add('saved'); setTimeout(()=>{ ind.textContent='saved'; },2500); }
+  if(!silent) updateMaster();
+}
+function loadAll(){
+  const raw=localStorage.getItem(SK);
+  if(!raw) return;
+  let data; try{ data=JSON.parse(raw); }catch(e){ return; }
+  Object.keys(data).forEach(k=>{
+    if(k==='_ts'){
+      const ts=data[k];
+      const ls=document.getElementById('last-saved'); if(ls) ls.textContent=ts;
+      const st=document.getElementById('settings-ts'); if(st) st.textContent=ts;
+      const ind=document.getElementById('save-ind'); if(ind){ind.textContent='saved';ind.classList.add('saved');}
+      return;
+    }
+    if(k.startsWith('radio_')){
+      const el=document.querySelector(`input[type=radio][name="${k.slice(6)}"][value="${data[k]}"]`);
+      if(el) el.checked=true; return;
+    }
+    const el=document.getElementById(k);
+    if(!el) return;
+    if(el.type==='checkbox') el.checked=!!data[k];
+    else if(el.tagName==='INPUT'||el.tagName==='TEXTAREA'||el.tagName==='SELECT') el.value=data[k]||'';
+  });
+  KPI_DATA.forEach(k=>{ const inp=document.getElementById('kpi-'+k.id); if(inp) updateKPI(k.id,inp.value); });
+  ['l','r','w','s'].forEach(b=>{ const inp=document.getElementById('iel-'+b); if(inp) updIELTS('iel-'+b,inp.value); });
+  updateMigScore(); updateDailyScore(); updateMaster();
+}
+function resetAll(){
+  if(!confirm('⚠️ RESET ALL DATA\n\nThis permanently deletes all your saved progress.\n\nType OK to confirm, then click OK.')) return;
+  localStorage.removeItem(SK);
+  location.reload();
+}
+function exportData(){
+  const raw=localStorage.getItem(SK);
+  if(!raw){ alert('No saved data to export.'); return; }
+  const a=document.createElement('a');
+  a.href='data:application/json;charset=utf-8,'+encodeURIComponent(raw);
+  a.download='MILAD_OS_backup_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+}
+function importData(e){
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{ try{ JSON.parse(ev.target.result); localStorage.setItem(SK,ev.target.result); alert('Data imported successfully. Reloading...'); location.reload(); }catch(err){ alert('Invalid file. Please use a valid MILAD OS JSON backup.'); } };
+  reader.readAsText(file);
+}
+
+// ═══════════════════════════════════════════
+// INIT — see DOMContentLoaded handler below
+// ═══════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', function() {
+  // 1. Build all UI components
+  buildKPIs(); buildDomains(); buildRoadmap(); buildLearn(); buildBacklog();
+  buildCerts(); buildDaily(); buildWeekly(); buildMonthly(); buildIELTS();
+  buildMigration(); buildCOO(); buildAI(); buildBrand(); buildWealth();
+  buildHealth(); buildTests(); buildTemplates();
+  // 2. Restore local data
+  loadAll();
+  // 3. Set up auto-save listeners
+  document.addEventListener('change', function(e){ if(e.target.type!=='radio') return; autoSave(); });
+  document.addEventListener('input', function(e){ var t=e.target.tagName; if(t==='INPUT'||t==='TEXTAREA') autoSave(); });
+  // 4. Load Google Sheets sync config into Settings UI
+  loadSyncConfigUI();
+  // 5. Start auto-sync if previously enabled
+  var cfg = getSyncConfig();
+  if (cfg.autoSync && cfg.apiUrl) startAutoSync();
+});
+
+// ═══════════════════════════════════════════
+// GOOGLE SHEETS SYNC ENGINE
+// ═══════════════════════════════════════════
+
+// ──────────────────────────────────────────
+// SYNC CONFIG (persisted in localStorage)
+// ──────────────────────────────────────────
+const SYNC_KEY = 'MILADOSV2_SYNC';
+
+function getSyncConfig() {
+  try {
+    const raw = localStorage.getItem(SYNC_KEY);
+    return raw ? JSON.parse(raw) : { apiUrl: '', userId: 'milad', token: '', autoSync: false, lastSync: null };
+  } catch(e) { return { apiUrl: '', userId: 'milad', token: '', autoSync: false, lastSync: null }; }
+}
+
+function saveSyncConfig() {
+  const cfg = {
+    apiUrl:    (document.getElementById('cfg-api-url')?.value  || '').trim(),
+    userId:    (document.getElementById('cfg-user-id')?.value  || 'milad').trim(),
+    token:     (document.getElementById('cfg-token')?.value    || '').trim(),
+    autoSync:  document.getElementById('cfg-auto-sync')?.checked || false,
+    lastSync:  getSyncConfig().lastSync
+  };
+  localStorage.setItem(SYNC_KEY, JSON.stringify(cfg));
+  return cfg;
+}
+
+function loadSyncConfigUI() {
+  const cfg = getSyncConfig();
+  const f = (id, v) => { const el = document.getElementById(id); if (el) { el.tagName === 'INPUT' && el.type === 'checkbox' ? el.checked = !!v : el.value = v || ''; } };
+  f('cfg-api-url',   cfg.apiUrl);
+  f('cfg-user-id',   cfg.userId);
+  f('cfg-token',     cfg.token);
+  f('cfg-auto-sync', cfg.autoSync);
+  setSyncStatus(cfg.lastSync ? `Last synced: ${cfg.lastSync}` : 'Not synced yet', 'idle');
+}
+
+// ──────────────────────────────────────────
+// SYNC STATUS UI
+// ──────────────────────────────────────────
+function setSyncStatus(msg, state) {
+  // state: 'idle' | 'syncing' | 'success' | 'error'
+  const el  = document.getElementById('sync-status-text');
+  const dot = document.getElementById('sync-status-dot');
+  const topDot = document.getElementById('sync-top-dot');
+  if (el)  el.textContent = msg;
+  const colors = { idle:'#9CA3AF', syncing:'#D97706', success:'#059669', error:'#DC2626' };
+  const c = colors[state] || colors.idle;
+  if (dot)    { dot.style.background = c; }
+  if (topDot) { topDot.style.background = c; }
+}
+
+function showSyncToast(msg, ok) {
+  const t = document.getElementById('sync-toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.style.background = ok ? 'var(--green)' : 'var(--red)';
+  t.style.opacity = '1';
+  setTimeout(() => { t.style.opacity = '0'; }, 3000);
+}
+
+// ──────────────────────────────────────────
+// COLLECT ALL FORM DATA
+// ──────────────────────────────────────────
+function collectAllData() {
+  const data = {};
+  document.querySelectorAll('[id]').forEach(el => {
+    if (!el.id) return;
+    if      (el.type === 'checkbox') data[el.id] = el.checked;
+    else if (el.type === 'radio')    return;
+    else if (['INPUT','TEXTAREA','SELECT'].includes(el.tagName)) data[el.id] = el.value;
+  });
+  document.querySelectorAll('input[type=radio]:checked').forEach(r => {
+    if (r.name) data['radio_' + r.name] = r.value;
+  });
+
+  // Build structured sections for Sheets
+  const kpiScores = {};
+  KPI_DATA.forEach(k => { kpiScores[k.id] = parseInt(document.getElementById('kpi-' + k.id)?.value) || 0; });
+
+  const ielts = {
+    listening: parseFloat(document.getElementById('iel-l')?.value) || 0,
+    reading:   parseFloat(document.getElementById('iel-r')?.value) || 0,
+    writing:   parseFloat(document.getElementById('iel-w')?.value) || 0,
+    speaking:  parseFloat(document.getElementById('iel-s')?.value) || 0
+  };
+  ielts.overall = ((ielts.listening + ielts.reading + ielts.writing + ielts.speaking) / 4).toFixed(1);
+
+  let migScore = 0;
+  MIG_ITEMS.forEach((_, i) => { if (document.getElementById('mig' + i)?.checked) migScore += MIG_ITEMS[i].weight; });
+
+  const daily = {
+    notes:          document.getElementById('daily-notes')?.value   || '',
+    tomorrowPri:    document.getElementById('tomorrow-pri')?.value  || '',
+    scores:         Array.from({length:6}, (_,i) => parseInt(document.getElementById('dscore-'+i)?.value)||0),
+    totalScore:     Array.from({length:6}, (_,i) => parseInt(document.getElementById('dscore-'+i)?.value)||0).reduce((a,b)=>a+b,0)
+  };
+
+  const weekly = {
+    top3:     document.getElementById('w-top3')?.value || '',
+    total:    parseInt(document.getElementById('weekly-total')?.textContent) || 0,
+    answers:  Array.from({length:8}, (_,i) => document.getElementById('wq'+i)?.value || '')
+  };
+
+  const monthly = {
+    period:   document.getElementById('m-period')?.value    || '',
+    wins:     document.getElementById('m-wins')?.value      || '',
+    failures: document.getElementById('m-failures')?.value  || '',
+    strategy: document.getElementById('m-strategy')?.value  || '',
+    answers:  Array.from({length:6}, (_,i) => document.getElementById('mq'+i)?.value || '')
+  };
+
+  const wealth = {
+    currentIncome: document.getElementById('inc-current')?.value || '700',
+    savings:       document.getElementById('savings')?.value     || '0',
+    migFund:       document.getElementById('mig-fund')?.value    || '0'
+  };
+
+  const health = {
+    workouts: document.getElementById('h-workouts')?.value || '0',
+    sleep:    document.getElementById('h-sleep')?.value    || '0',
+    energy:   document.getElementById('h-energy')?.value   || '0',
+    stress:   document.getElementById('h-stress')?.value   || '0',
+    smokeDays:document.getElementById('smoke-days')?.value || '0',
+    notes:    document.getElementById('health-notes')?.value|| ''
+  };
+
+  const dashToday = document.getElementById('dash-today')?.value || '';
+  const dashWeek  = document.getElementById('dash-week')?.value  || '';
+
+  // Total MILAD OS score
+  let totalScore = 0;
+  KPI_DATA.forEach(k => { totalScore += (KPI_W[k.id] || .05) * (kpiScores[k.id] || 0); });
+  totalScore = Math.round(totalScore);
+
+  return {
+    raw:         data,
+    timestamp:   new Date().toISOString(),
+    date:        new Date().toLocaleDateString('en-GB'),
+    kpiScores,
+    ielts,
+    migrationScore: migScore,
+    daily,
+    weekly,
+    monthly,
+    wealth,
+    health,
+    dashToday,
+    dashWeek,
+    totalScore
+  };
+}
+
+// ──────────────────────────────────────────
+// CORE API CALL
+// ──────────────────────────────────────────
+async function apiCall(action, payload = {}) {
+  const cfg = getSyncConfig();
+  if (!cfg.apiUrl) throw new Error('No API URL configured. Go to Settings → Google Sheets Connection.');
+  if (!cfg.token)  throw new Error('No API token configured. Go to Settings → Google Sheets Connection.');
+
+  const body = JSON.stringify({ action, userId: cfg.userId, token: cfg.token, ...payload });
+
+  const res = await fetch(cfg.apiUrl, {
+    method:  'POST',
+    headers: { 'Content-Type': 'text/plain' }, // Apps Script needs text/plain for doPost
+    body
+  });
+
+  if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+  const json = await res.json();
+  if (json.status === 'error') throw new Error(json.message || 'API returned error');
+  return json;
+}
+
+// ──────────────────────────────────────────
+// TEST CONNECTION
+// ──────────────────────────────────────────
+async function testConnection() {
+  saveSyncConfig();
+  const btn = document.getElementById('btn-test-conn');
+  if (btn) { btn.textContent = 'Testing...'; btn.disabled = true; }
+  setSyncStatus('Testing connection...', 'syncing');
+  try {
+    const result = await apiCall('ping');
+    setSyncStatus(`✓ Connected — ${result.message || 'OK'}`, 'success');
+    showSyncToast('✓ Connection successful!', true);
+  } catch(err) {
+    setSyncStatus(`✗ ${err.message}`, 'error');
+    showSyncToast(`✗ ${err.message}`, false);
+  } finally {
+    if (btn) { btn.textContent = 'Test Connection'; btn.disabled = false; }
+  }
+}
+
+// ──────────────────────────────────────────
+// SYNC TO GOOGLE SHEETS
+// ──────────────────────────────────────────
+async function syncToSheets(silent = false) {
+  const cfg = getSyncConfig();
+  if (!cfg.apiUrl) {
+    if (!silent) showSyncToast('No API URL — configure in Settings', false);
+    return false;
+  }
+
+  if (!silent) setSyncStatus('Syncing to Google Sheets...', 'syncing');
+  const btn = document.getElementById('btn-sync-now');
+  if (btn && !silent) { btn.textContent = 'Syncing...'; btn.disabled = true; }
+
+  try {
+    const allData = collectAllData();
+
+    // Save all major sections in parallel
+    await apiCall('saveData', { data: allData });
+
+    // Update last sync time
+    const now = new Date().toLocaleString();
+    const stored = getSyncConfig();
+    stored.lastSync = now;
+    localStorage.setItem(SYNC_KEY, JSON.stringify(stored));
+
+    // Update UI
+    const el = document.getElementById('last-sync-time');
+    if (el) el.textContent = now;
+    const stel = document.getElementById('settings-last-sync');
+    if (stel) stel.textContent = now;
+    setSyncStatus(`✓ Synced at ${now}`, 'success');
+    if (!silent) showSyncToast('✓ Synced to Google Sheets!', true);
+    return true;
+  } catch(err) {
+    setSyncStatus(`✗ Sync failed: ${err.message}`, 'error');
+    if (!silent) showSyncToast(`✗ Sync failed: ${err.message}`, false);
+    console.error('Sync error:', err);
+    return false;
+  } finally {
+    if (btn && !silent) { btn.textContent = 'Sync Now'; btn.disabled = false; }
+  }
+}
+
+// ──────────────────────────────────────────
+// LOAD FROM GOOGLE SHEETS
+// ──────────────────────────────────────────
+async function loadFromSheets() {
+  const cfg = getSyncConfig();
+  if (!cfg.apiUrl) { showSyncToast('No API URL configured', false); return; }
+
+  const btn = document.getElementById('btn-load-sheets');
+  if (btn) { btn.textContent = 'Loading...'; btn.disabled = true; }
+  setSyncStatus('Loading from Google Sheets...', 'syncing');
+
+  try {
+    const result = await apiCall('loadData');
+    if (!result.data || !result.data.raw) throw new Error('No data found in Google Sheets');
+
+    // Save to localStorage
+    localStorage.setItem(SK, JSON.stringify(result.data.raw));
+    // Reload UI
+    loadAll();
+    setSyncStatus(`✓ Loaded from Sheets (${result.data.timestamp || 'unknown time'})`, 'success');
+    showSyncToast('✓ Data loaded from Google Sheets!', true);
+  } catch(err) {
+    setSyncStatus(`✗ Load failed: ${err.message}`, 'error');
+    showSyncToast(`✗ Load failed: ${err.message}`, false);
+  } finally {
+    if (btn) { btn.textContent = 'Load from Sheets'; btn.disabled = false; }
+  }
+}
+
+// ──────────────────────────────────────────
+// EXPORT JSON BACKUP (also triggers Drive backup)
+// ──────────────────────────────────────────
+async function exportJsonBackup() {
+  // Always save locally first
+  exportData(); // existing function from v2
+
+  // Also attempt Drive backup if connected
+  const cfg = getSyncConfig();
+  if (!cfg.apiUrl) return;
+
+  try {
+    const allData = collectAllData();
+    await apiCall('createDriveBackup', { data: allData });
+    showSyncToast('✓ Backed up to Google Drive!', true);
+  } catch(err) {
+    showSyncToast(`Local export done. Drive backup failed: ${err.message}`, false);
+  }
+}
+
+// ──────────────────────────────────────────
+// AUTO SYNC ENGINE
+// ──────────────────────────────────────────
+let autoSyncInterval = null;
+
+function startAutoSync() {
+  stopAutoSync();
+  autoSyncInterval = setInterval(async () => {
+    const cfg = getSyncConfig();
+    if (cfg.autoSync && cfg.apiUrl) {
+      await syncToSheets(true); // silent
+    }
+  }, 30000); // every 30 seconds
+}
+
+function stopAutoSync() {
+  if (autoSyncInterval) { clearInterval(autoSyncInterval); autoSyncInterval = null; }
+}
+
+function toggleAutoSync() {
+  const cfg = saveSyncConfig();
+  const statusEl = document.getElementById('auto-sync-status');
+  if (cfg.autoSync) {
+    startAutoSync();
+    if (statusEl) statusEl.textContent = 'Auto-sync ON — every 30s';
+    showSyncToast('Auto-sync enabled', true);
+  } else {
+    stopAutoSync();
+    if (statusEl) statusEl.textContent = 'Auto-sync OFF';
+  }
+}
+
+
+
+
+</script>
+</body>
+</html>
